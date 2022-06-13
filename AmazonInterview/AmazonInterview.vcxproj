@@ -143,9 +143,13 @@
   <ItemGroup>
     <ClCompile Include="AmazonInterview.cpp" />
     <ClCompile Include="ArrayAndString.cpp" />
+    <ClCompile Include="LinkedList.cpp" />
+    <ClCompile Include="TreeAndGraph.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ArrayAndString.h" />
+    <ClInclude Include="LinkedList.h" />
+    <ClInclude Include="TreeAndGraph.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
