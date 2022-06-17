@@ -121,7 +121,7 @@ namespace ArrayAndString
         for (int i = 0; i < nums.size(); ++i)
         {
             int left = i + 1;
-            int right = nums.size() - 1;
+            int right = static_cast<int>( nums.size() - 1 );
 
             while (left < right)
             {
@@ -245,7 +245,7 @@ namespace ArrayAndString
 
         for (const auto& str : logs)
         {
-            int idx = str.find_first_of(' ');
+            int idx = static_cast<int>( str.find_first_of(' ') );
             string identifier = str.substr(0, idx);
             string content = str.substr(idx + 1);
 
@@ -284,6 +284,46 @@ namespace ArrayAndString
         return result;
     }
 
+    //-----------------------------------------------------------------------------
+    // 1099. Two Sum Less Than K
+    // i < j with nums[i] + nums[j] = sum and sum < k
+    //
+    // Might be related to 'Optimal Utilization'.
+    //-----------------------------------------------------------------------------
+
+    int twoSumLessThanK(vector<int>& nums, int k)
+    {
+        sort(nums.begin(), nums.end());
+        int left = 0;
+        int right = static_cast<int>( nums.size() - 1 );
+
+        int result = -1;
+        while (left < right)
+        {
+            int sum = nums[left] + nums[right];
+            if (sum < k)
+            {
+                left++;
+                result = max(result, sum);
+            }
+            else
+            {
+                right--;
+            }
+        }
+
+        return result;
+    }
+
+    //-----------------------------------------------------------------------------
+    // 907. Sum of Subarray Minimums
+    //-----------------------------------------------------------------------------
+
+    //-----------------------------------------------------------------------------
+    // 2104. Sum of Subarray Ranges
+    //
+    //-----------------------------------------------------------------------------
+
     void TestArrayAndString()
     {
         // 12. Integer to Roman
@@ -319,5 +359,13 @@ namespace ArrayAndString
         cout << "\n937. Reorder Data in Log Files: " << endl;
         auto resultVS =reorderLogFiles(words);
         LeetCodeUtil::PrintVector(resultVS);
+
+        // 1099. Two Sum Less Than K
+        // Input: nums = [34,23,1,24,75,33,54,8], k = 60
+        // Output: 58
+        // Input: nums = [1, 2, 4, 5], k = 6
+        // Output:  5
+        inputVI = { 34,23,1,24,75,33,54,8 };
+        cout << "\n1099. Two Sum Less Than K: " << twoSumLessThanK(inputVI, 60) << endl;
     }
 }

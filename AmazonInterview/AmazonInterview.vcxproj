@@ -117,6 +117,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\..\MediumCollection\LeetCodeUtil\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -143,12 +144,18 @@
   <ItemGroup>
     <ClCompile Include="AmazonInterview.cpp" />
     <ClCompile Include="ArrayAndString.cpp" />
+    <ClCompile Include="DesignAndOthers.cpp" />
     <ClCompile Include="LinkedList.cpp" />
+    <ClCompile Include="OptmalUtilization.cpp" />
+    <ClCompile Include="SortingAndSeaching.cpp" />
     <ClCompile Include="TreeAndGraph.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ArrayAndString.h" />
+    <ClInclude Include="DesignAndOthers.h" />
     <ClInclude Include="LinkedList.h" />
+    <ClInclude Include="OptimalUtilization.h" />
+    <ClInclude Include="SortingAndSearching.h" />
     <ClInclude Include="TreeAndGraph.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
