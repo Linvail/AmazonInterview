@@ -145,6 +145,7 @@
     <ClCompile Include="AmazonInterview.cpp" />
     <ClCompile Include="ArrayAndString.cpp" />
     <ClCompile Include="DesignAndOthers.cpp" />
+    <ClCompile Include="DP.cpp" />
     <ClCompile Include="LinkedList.cpp" />
     <ClCompile Include="OptmalUtilization.cpp" />
     <ClCompile Include="SortingAndSeaching.cpp" />
@@ -153,6 +154,7 @@
   <ItemGroup>
     <ClInclude Include="ArrayAndString.h" />
     <ClInclude Include="DesignAndOthers.h" />
+    <ClInclude Include="DP.h" />
     <ClInclude Include="LinkedList.h" />
     <ClInclude Include="OptimalUtilization.h" />
     <ClInclude Include="SortingAndSearching.h" />

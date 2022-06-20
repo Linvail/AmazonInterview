@@ -36,6 +36,9 @@
     <ClCompile Include="OptmalUtilization.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DP.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ArrayAndString.h">
@@ -54,6 +57,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="OptimalUtilization.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DP.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

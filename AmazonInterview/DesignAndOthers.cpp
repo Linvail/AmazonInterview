@@ -201,9 +201,49 @@ namespace DesignAndOthers
         }
     };
 
+    //-----------------------------------------------------------------------------
+    // 1268. Search Suggestions System (Medium)
+    // Topic: Trie (prefix tree), binary search.
+    //-----------------------------------------------------------------------------
+    class Solution1268
+    {
+    public:
+        vector<vector<string>> suggestedProducts(vector<string>& products, string searchWord)
+        {
+            // The output must be sorted lexicographically. Since we need to sort,
+            // we can sort the entire 'products' and apply binary search to find
+            // the possible matched word.
+            sort(products.begin(), products.end());
 
+            vector<vector<string>> result;
+            string partial;
+            for (int i = 0; i < searchWord.size(); ++i)
+            {
+                vector<string> matches;
+                partial.push_back(searchWord[i]);
+                // Find the first not-less-than word.
+                auto it = std::lower_bound(products.begin(), products.end(), partial);
+                // Look forward and collect 3 words.
+                for (int j = 0; j < 3 && it != products.end(); j++ )
+                {
+                    if (it->compare(0, i + 1, partial) != 0)
+                    {
+                        // Check if partial is prefix.
+                        break;
+                    }
+                    matches.push_back(*it);
+                    it++;
+                }
+                result.push_back(matches);
+            }
 
+            return result;
+        }
+    };
 
+    //-----------------------------------------------------------------------------
+    // Test function
+    //-----------------------------------------------------------------------------
     void TestDesignAndOthers()
     {
         // 895. Maximum Frequency Stack (Hard)
@@ -234,12 +274,27 @@ namespace DesignAndOthers
         // Output: [0, 0, 1, 1, 1, 1, 1, 0]
         // Input: cells = [1,1,0,1,1,0,0,1], n = 300663720
         // Output: [0,0,1,0,0,1,1,0]
-
         Solution957 sol957;
         vector<int> inputVI;
         BuildIntVectorFromString("[0,1,0,1,1,0,0,1]", &inputVI);
         resultVI = sol957.prisonAfterNDays(inputVI, 15);
         cout << "\n957. Prison Cells After N Day: " << endl;
         PrintVector(resultVI);
+
+        // 1268. Search Suggestions System (Medium)
+        // Input: products = ["mobile","mouse","moneypot","monitor","mousepad"], searchWord = "mouse"
+        // Output: [
+        // ["mobile", "moneypot", "monitor"],
+        // ["mobile", "moneypot", "monitor"],
+        // ["mouse", "mousepad"],
+        // ["mouse", "mousepad"],
+        // ["mouse", "mousepad"]
+        // ]
+
+        vector<string> inputVS = { "mobile","mouse","moneypot","monitor","mousepad" };
+        Solution1268 sol1268;
+        auto resultVVS = sol1268.suggestedProducts(inputVS, "mouse");
+        cout << "\n1268. Search Suggestions System: " << endl;
+        LeetCodeUtil::PrintMatrix(resultVVS);
     }
 }

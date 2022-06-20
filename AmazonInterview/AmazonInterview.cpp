@@ -2,6 +2,7 @@
 //
 #include "ArrayAndString.h"
 #include "DesignAndOthers.h"
+#include "DP.h"
 #include "LinkedList.h"
 #include "TreeAndGraph.h"
 #include "SortingAndSearching.h"
@@ -18,4 +19,6 @@ int main()
     DesignAndOthers::TestDesignAndOthers();
 
     ArrayAndString::TestOptimalUtilization();
+
+    DP::TestDP();
 }
