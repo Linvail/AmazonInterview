@@ -1,6 +1,7 @@
 #include "LinkedList.h"
-
 #include "LeetCodeUtil.h"
+
+#include <stack>
 
 namespace LinkedList
 {
@@ -275,6 +276,119 @@ namespace LinkedList
     };
 
     //-----------------------------------------------------------------------------
+    // 2130. Maximum Twin Sum of a Linked List (Medium)
+    //-----------------------------------------------------------------------------
+    class Solution2130
+    {
+    private:
+        //! Return the head of the right half list.
+        //! 1 2 3 3 4 5
+        //!       ^
+        //! If the list has even number of nodes, this will return the 2nd of the
+        //! middle, which is the 2nd 3.
+        static ListNode* findMiddle(ListNode* head)
+        {
+            ListNode* slowPtr = head;
+            ListNode* fastPtr = head;
+
+            while (fastPtr && fastPtr->next)
+            {
+                slowPtr = slowPtr->next;
+                fastPtr = fastPtr->next->next;
+            }
+            return slowPtr;
+        }
+
+    public:
+        int pairSum(ListNode* head)
+        {
+            if (!head || !head->next)
+            {
+                return 0;
+            }
+            // Idea:
+            // 1. Use two pointer to find the middle.
+            // 2. Use the stack to store the elements of the right half list.
+            ListNode* rightHalf = findMiddle(head);
+
+            stack<int> nodeStack;
+            while (rightHalf)
+            {
+                nodeStack.push(rightHalf->val);
+                rightHalf = rightHalf->next;
+            }
+
+            int result = 0;
+            while (!nodeStack.empty() && head)
+            {
+                result = max( result, head->val + nodeStack.top() );
+                nodeStack.pop();
+                head = head->next;
+            }
+
+            return result;
+        }
+    };
+
+    //-----------------------------------------------------------------------------
+    // 696. Count Binary Substrings (Easy)
+    //-----------------------------------------------------------------------------
+    class Solution696
+    {
+    public:
+        int countBinarySubstrings(const string& inputStr)
+        {
+            // 11110011
+            //   %%%%^  Meet 1 (changed = true)
+            // Number of 1 is 4, number of 0 is 2.
+            // It can contribute min(4, 2) = 2.
+            const int len = static_cast<int>(inputStr.size());
+            int result = 0;
+            int countOfOne = 0;
+            int countOfZero = 0;
+            char prevChar = inputStr[0];
+
+            for (int j = 0; j < inputStr.size(); ++j)
+            {
+                bool changed = prevChar != inputStr[j];
+                if (changed)
+                {
+                    result += min(countOfZero, countOfOne);
+                    // 00110
+                    //     ^  Handle the last char which does change.
+                    if (j == len - 1 && changed)
+                    {
+                        result++;
+                        break;
+                    }
+                }
+
+                if (inputStr[j] == '1')
+                {
+                    countOfOne = changed ? 1 : countOfOne + 1;
+                }
+                else
+                {
+                    countOfZero = changed ? 1 : countOfZero + 1;
+                }
+
+                // 00011
+                //     ^  Handle the last char which doesn't change.
+                if (j == len - 1 && !changed)
+                {
+                    result += min(countOfZero, countOfOne);
+                    break;
+                }
+
+                prevChar = inputStr[j];
+            }
+
+            return result;
+        }
+    };
+
+
+    //-----------------------------------------------------------------------------
     // Test function.
     //-----------------------------------------------------------------------------
     void TestLinkedList()
@@ -313,6 +427,21 @@ namespace LinkedList
         inputIV = { 1,2,3,3,2,1 };
         head = LeetCodeUtil::BuildLinkedListFromVector(inputIV);
         cout << "\n234. Palindrome Linked List (Easy): " << Solution234::isPalindrome(head) << endl;
+
+        // 2130. Maximum Twin Sum of a Linked List (Medium)
+        head = LeetCodeUtil::BuildLinkedListFromVector({ 4, 2, 2, 3 });
+        Solution2130 sol2130;
+        cout << "\n2130. Maximum Twin Sum of a Linked List: " << sol2130.pairSum(head) << endl;
+
+        // 696. Count Binary Substrings (Easy)
+        // Input: s = "10101"
+        // Output: 4
+        // Input: s = "00110"
+        // Output: 3
+        // Input: s = "11110011"
+        // Output: 4
+        Solution696 sol696;
+        cout << "\n696. Count Binary Substrings: " << sol696.countBinarySubstrings("10101") << endl;
 
     }
 }

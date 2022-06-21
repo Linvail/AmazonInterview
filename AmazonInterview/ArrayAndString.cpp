@@ -623,73 +623,41 @@ namespace ArrayAndString
         bool negative = false;
         int maxLen = 0;
         // The start position of the subarray that may or may not contain negative number.
-        int startPosNegative = 0;
-        // The start position of the subarray that doesn't contain negative number.
-        int startPosPositive = -1;
+        int startPos = 0;
         int firstNegative = -1;
 
         for (int i = 0; i < nums.size(); ++i)
         {
             if (nums[i] == 0)
             {
-                // Handle the case:
-                //[-7,-10,-7,21,20,-12,-34,26,2,0,......]
-                //     ^^^^^^^^^^^^^^^^^^^^^^^^
-                if (negative && nums[firstNegative] < 0)
-                {
-                    // If the start position is negative.
-                    maxLen = max(maxLen, i - firstNegative - 1);
-                }
-
-                startPosNegative = i + 1;
-                startPosPositive = -1;
                 firstNegative = -1;
                 negative = false;
+                startPos = i + 1;
             }
             else
             {
                 if (nums[i] < 0)
                 {
                     negative = !negative;
-                    startPosPositive = -1;
                     if (firstNegative == -1)
                     {
                         firstNegative = i;
                     }
                 }
-                else
-                {
-                    if (negative && startPosPositive == -1)
-                    {
-                        startPosPositive = i;
-                    }
-                    if (startPosPositive != -1)
-                    {
-                        maxLen = max(maxLen, i - startPosPositive + 1);
-                    }
-                }
 
                 if (!negative)
                 {
-                    maxLen = max(maxLen, i - startPosNegative + 1);
+                    maxLen = max(maxLen, i - startPos + 1);
                 }
-                else if(i == nums.size() - 1)
+                else if(nums[i] > 0)
                 {
-                    // Handle the case:
-                    //[-7,-10,-7,21,20,-12,-34,26,2]
-                    //     ^^^^^^^^^^^^^^^^^^^^^^^^
-                    if (negative && nums[firstNegative] < 0)
-                    {
-                        // If the start position is negative.
-                        maxLen = max(maxLen, i - firstNegative);
-                    }
+                    maxLen = max(maxLen, i - firstNegative);
                 }
             }
         }
 
         return maxLen;
     }
-
 
     //-----------------------------------------------------------------------------
     // Test function

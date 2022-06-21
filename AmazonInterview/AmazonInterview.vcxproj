@@ -147,6 +147,7 @@
     <ClCompile Include="DesignAndOthers.cpp" />
     <ClCompile Include="DP.cpp" />
     <ClCompile Include="LinkedList.cpp" />
+    <ClCompile Include="Math.cpp" />
     <ClCompile Include="OptmalUtilization.cpp" />
     <ClCompile Include="SortingAndSeaching.cpp" />
     <ClCompile Include="TreeAndGraph.cpp" />
@@ -156,6 +157,7 @@
     <ClInclude Include="DesignAndOthers.h" />
     <ClInclude Include="DP.h" />
     <ClInclude Include="LinkedList.h" />
+    <ClInclude Include="Math.h" />
     <ClInclude Include="OptimalUtilization.h" />
     <ClInclude Include="SortingAndSearching.h" />
     <ClInclude Include="TreeAndGraph.h" />

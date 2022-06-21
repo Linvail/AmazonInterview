@@ -7,6 +7,7 @@
 #include "TreeAndGraph.h"
 #include "SortingAndSearching.h"
 #include "OptimalUtilization.h"
+#include "Math.h"
 
 #include <iostream>
 
@@ -21,4 +22,6 @@ int main()
     ArrayAndString::TestOptimalUtilization();
 
     DP::TestDP();
+
+    Math::TestMath();
 }

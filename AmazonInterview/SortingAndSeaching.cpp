@@ -32,7 +32,7 @@ namespace SortingAndSearching
     };
 
     //-----------------------------------------------------------------------------
-    // 1152. Analyze User Website Visit Pattern
+    // 1152. Analyze User Website Visit Pattern (Medium)
     //
     // A pattern is a list of three websites (not necessarily distinct).
     //
@@ -117,6 +117,39 @@ namespace SortingAndSearching
         }
     };
 
+    //-----------------------------------------------------------------------------
+    // 1710. Maximum Units on a Truck (Easy)
+    //-----------------------------------------------------------------------------
+    class Solution1710
+    {
+    public:
+        int maximumUnits(vector<vector<int>>& boxTypes, int truckSize)
+        {
+            // Idea: We should choose the box that can contains most units
+            // In other words, choose the biggest box.
+            // Sort the box data by its capacity in descending order.
+            sort(boxTypes.begin(), boxTypes.end(), [](const vector<int>& left, const vector<int>& right)
+                {
+                    return left[1] > right[1];
+                }
+            );
+
+            int result = 0;
+            for (const auto& currBox : boxTypes)
+            {
+                const int vol = min(truckSize, currBox[0]);
+                result += ( vol * currBox[1] );
+                truckSize -= vol;
+
+                if (truckSize == 0)
+                {
+                    break;
+                }
+            }
+
+            return result;
+        }
+    };
 
     //-----------------------------------------------------------------------------
     // Test function.
@@ -135,7 +168,7 @@ namespace SortingAndSearching
         cout << "\n973. K Closest Points to Origin: " << endl;
         PrintMatrix(resultVVI);
 
-        // 1152. Analyze User Website Visit Pattern
+        // 1152. Analyze User Website Visit Pattern (Medium)
         // Input: username = ["joe", "joe", "joe", "james", "james", "james", "james", "mary", "mary", "mary"],
         // timestamp = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         // website = ["home", "about", "career", "home", "cart", "maps", "home", "home", "about", "career"]
@@ -164,5 +197,17 @@ namespace SortingAndSearching
         );
         cout << "\n1152. Analyze User Website Visit Pattern: " << endl;
         PrintVector(resultVS);
+
+        // 1710. Maximum Units on a Truck (Easy)
+        // Input: boxTypes = [[1,3],[2,2],[3,1]], truckSize = 4
+        // Output: 8
+        // You can take all the boxes of the first and second types, and one box of the third type.
+        // The total number of units will be = ( 1 * 3 ) + ( 2 * 2 ) + ( 1 * 1 ) = 8.
+        // Input: boxTypes = [[1,3],[5,5],[2,5],[4,2],[4,1],[3,1],[2,2],[1,3],[2,5],[3,2]], truckSize = 35
+        // Output: 76
+        Solution1710 sol1710;
+        BuildIntMatrixFromString("[[1,3],[2,2],[3,1]]", &inputMatrix);
+        cout << "\n1710. Maximum Units on a Truck: " << sol1710.maximumUnits(inputMatrix, 4) << endl;
+
     }
 }
