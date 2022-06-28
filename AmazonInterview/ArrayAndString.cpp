@@ -5,10 +5,12 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <queue>
 #include <unordered_map>
 #include <unordered_set>
 #include <sstream>
 #include <stack>
+#include <numeric>
 
 using namespace std;
 
@@ -616,7 +618,7 @@ namespace ArrayAndString
     };
 
     //-----------------------------------------------------------------------------
-    // 1567. Maximum Length of Subarray With Positive Product
+    // 1567. Maximum Length of Subarray With Positive Product (Medium)
     //-----------------------------------------------------------------------------
     int getMaxLen(vector<int>& nums)
     {
@@ -660,11 +662,223 @@ namespace ArrayAndString
     }
 
     //-----------------------------------------------------------------------------
+    // 1151. Minimum Swaps to Group All 1's Together (Medium)
+    //-----------------------------------------------------------------------------
+    int minSwaps(vector<int>& data)
+    {
+        // Idea: Assume that there is total n 1. Image a sliding window with n size.
+        // If there is total n 1-digit in the window, it means all 1 are grouped together.
+        // No need to swap, the answer is 0.
+        // If there is n-1 1-digit in the window, it means we at least need one swap, so
+        // the answer is 1.
+        //
+        // As for implementation, we can use prefix sum to know the number of 1 in
+        // a window.
+        // 0 1 0 1 1 <- data
+        // 0 1 1 2 3 <- prefix sum
+        //   ^   ^    psum[3] - psum[1] = 2 - 1 = 1. So, data[2~3] has 1 1-digit.
+        // std::partial_sum() can be used to calculate the prefix sum.
+        vector<int> prefixSum(data.size());
+
+        std::partial_sum(data.begin(), data.end(), prefixSum.begin());
+
+        int totalCountOfOne = prefixSum.back();
+        if (totalCountOfOne == 0) return 0;
+
+        // Initialize to the value of the 1st windows(0 ~ n - 1).
+        int maxCountOfOneInWindow = prefixSum[totalCountOfOne - 1];
+        for (int i = totalCountOfOne; i < data.size(); ++i)
+        {
+            maxCountOfOneInWindow = max(maxCountOfOneInWindow, prefixSum[i] - prefixSum[i - totalCountOfOne]);
+        }
+
+        return totalCountOfOne - maxCountOfOneInWindow;
+    }
+
+    //-----------------------------------------------------------------------------
+    // 370. Range Addition (Medium)
+    //-----------------------------------------------------------------------------
+    vector<int> getModifiedArray(int length, vector<vector<int>>& updates)
+    {
+        vector<int> result(length, 0);
+        // Put inc at startIndex allows the inc to be carried to the next index
+        // starting from startIndex when we do the sum accumulation.
+        // Put - inc at endIndex + 1 simply means cancel out the previous carry
+        // from the next index of the endIndex, because the previous carry should not be counted beyond endIndex.
+        for (const auto& update : updates)
+        {
+            result[update[0]] += update[2];
+            if (update[1] < length - 1)
+            {
+                result[update[1] + 1] -= update[2];
+            }
+        }
+
+        // Calculate the prefix sum - let increment in every startIndex raise a
+        // wave to the endIndex.
+        for (int i = 1; i < length; ++i)
+        {
+            result[i] += result[i - 1];
+        }
+
+        return result;
+    }
+
+    //-----------------------------------------------------------------------------
+    // 2214. Minimum Health to Beat Game
+    //-----------------------------------------------------------------------------
+    long long minimumHealth(const vector<int>& damage, int armor)
+    {
+        // Use the armor on the level which makes greatest damage.
+        long long totalDamage = 0;
+        for (const auto& d : damage)
+        {
+            totalDamage += d;
+        }
+
+        long long maxDamage = *std::max_element(damage.begin(), damage.end());
+
+        totalDamage -= maxDamage > armor ? armor : maxDamage;
+
+        return totalDamage + 1;
+    }
+
+    //-----------------------------------------------------------------------------
+    // 735. Asteroid Collision
+    //-----------------------------------------------------------------------------
+    vector<int> asteroidCollision(const vector<int>& asteroids)
+    {
+        vector<int> result;
+        for (const auto& rock : asteroids)
+        {
+            if (result.empty() || rock > 0)
+            {
+                result.push_back(rock);
+            }
+            else
+            {
+                while (true)
+                {
+                    if (result.empty() || result.back() < 0)
+                    {
+                        result.push_back(rock);
+                        break;
+                    }
+                    else if (result.back() == -rock)
+                    {
+                        // Both rocks explode.
+                        result.pop_back();
+                        break;
+                    }
+                    else if (result.back() < (-rock) )
+                    {
+                        // The previous rock is smaller, so it explodes.
+                        // Let to left rock keep going.
+                        result.pop_back();
+                    }
+                    else
+                    {
+                        // The last rock is bigger.
+                        break;
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+    //-----------------------------------------------------------------------------
+    // 2193. Minimum Number of Moves to Make Palindrome (Hard)
+    //-----------------------------------------------------------------------------
+    int minMovesToMakePalindrome(string inputStr)
+    {
+        int result = 0;
+        while (!inputStr.empty())
+        {
+            // Find the first occurrence of the last char.
+            const int idx = inputStr.find(inputStr.back());
+            if (idx == inputStr.size() - 1)
+            {
+                // If this char only occurs in the end, it is unique.
+                // So, we must move it to the middle.
+                result += idx / 2;
+            }
+            else
+            {
+                // It takes 'idx' steps to move it to the beginning.
+                result += idx;
+                // Remove this char.
+                inputStr.erase(idx, 1);
+            }
+            inputStr.pop_back();
+        }
+
+        return result;
+    }
+
+    //-----------------------------------------------------------------------------
+    // 767. Reorganize String (Medium)
+    //-----------------------------------------------------------------------------
+    string reorganizeString(const string& s)
+    {
+        const int len = s.size();
+        unordered_map<char, size_t> charCountMap;
+        for (const auto& c : s)
+        {
+            charCountMap[c]++;
+        }
+
+        size_t highestFred = 0;
+        priority_queue<pair<size_t, char>> higherFreq;
+        for (const auto& p : charCountMap)
+        {
+            highestFred = max(highestFred, p.second);
+            if (highestFred > ( len + 1 ) / 2)
+            {
+                return "";
+            }
+
+            higherFreq.emplace(p.second, p.first);
+        }
+
+        string result;
+        while (higherFreq.size() >= 2)
+        {
+            auto higher = higherFreq.top();
+            higherFreq.pop();
+            auto lower = higherFreq.top();
+            higherFreq.pop();
+
+            result.push_back(higher.second);
+            result.push_back(lower.second);
+
+            higher.first--;
+            if (higher.first > 0)
+            {
+                higherFreq.push(higher);
+            }
+            lower.first--;
+            if (lower.first > 0)
+            {
+                higherFreq.push(lower);
+            }
+        }
+
+        if (!higherFreq.empty())
+        {
+            result.push_back(higherFreq.top().second);
+        }
+
+        return result;
+    }
+
+    //-----------------------------------------------------------------------------
     // Test function
     //-----------------------------------------------------------------------------
     void TestArrayAndString()
     {
-        // 12. Integer to Roman
+        // 12. Integer to Roman (Medium)
         // Input: num = 58
         // Output: "LVIII"
         // Input: num = 1994
@@ -677,20 +891,20 @@ namespace ArrayAndString
         vector<int> inputVI = { -1,2,1,-4 };
         cout << "\n16. 3Sum Closest: " << threeSumClosest(inputVI, 1);
 
-        // 165. Compare Version Numbers
+        // 165. Compare Version Numbers (Medium)
         //Input: version1 = "1.01", version2 = "1.001"
         // Output : 0
         // Input: version1 = "0.1", version2 = "1.1"
         // Output: -1
         cout << "\n165. Compare Version Numbers: " << compareVersion("1.2.3", "1.2.1");
 
-        // 819. Most Common Word
+        // 819. Most Common Word (Easy)
         // Input: paragraph = "Bob hit a ball, the hit BALL flew far after it was hit.", banned = ["hit"]
         // Output : "ball"
         vector<string> words{ "hit" };
         cout << "\n819. Most Common Word: " << mostCommonWord("Bob hit a ball, the hit BALL flew far after it was hit.", words) << endl;
 
-        // 937. Reorder Data in Log Files
+        // 937. Reorder Data in Log Files (Easy)
         // Input: logs = ["dig1 8 1 5 1","let1 art can","dig2 3 6","let2 own kit dig","let3 art zero"]
         // Output: ["let1 art can", "let3 art zero", "let2 own kit dig", "dig1 8 1 5 1", "dig2 3 6"]
         words = { "dig1 8 1 5 1","let1 art can","dig2 3 6","let2 own kit dig","let3 art zero" };
@@ -698,7 +912,7 @@ namespace ArrayAndString
         auto resultVS =reorderLogFiles(words);
         LeetCodeUtil::PrintVector(resultVS);
 
-        // 1099. Two Sum Less Than K
+        // 1099. Two Sum Less Than K (Easy)
         // Input: nums = [34,23,1,24,75,33,54,8], k = 60
         // Output: 58
         // Input: nums = [1, 2, 4, 5], k = 6
@@ -706,7 +920,7 @@ namespace ArrayAndString
         inputVI = { 34,23,1,24,75,33,54,8 };
         cout << "\n1099. Two Sum Less Than K: " << twoSumLessThanK(inputVI, 60) << endl;
 
-        // 907. Sum of Subarray Minimums
+        // 907. Sum of Subarray Minimums (Medium)
         // Input: arr = [3,1,2,4]
         // Output: 17
         // Input: arr = [11,81,94,43,3]
@@ -720,7 +934,7 @@ namespace ArrayAndString
         inputVI = { 4,-2,-3,4,1 };
         cout << "\n2104. Sum of Subarray Ranges: " << subArrayRanges(inputVI) << endl;
 
-        // 2281. Sum of Total Strength of Wizards
+        // 2281. Sum of Total Strength of Wizards (Hard)
         // Input: strength = [1,3,1,2]
         // Output: 44
         // Input: strength = [1, 2, 3]
@@ -729,7 +943,7 @@ namespace ArrayAndString
         inputVI = { 1932,1660,828,290,1808,446,1107,1843,913,856,503,535,263,704,13,1188,1391,706,861,867,262,304,1599,732,1365,1244,8,1936,642,1003,844,1539,619,135,1199,730,1301,1701,1959,243,1598,1498,346,1629,1739,1612,862,1857,1137,1728,57,233,1369,1016,1709,955,1258,705,1025,1521,1529,1161,1387,1220,667,299,395,1518,1959,873,472,1870,1266,1105,887,1471,1484,614,1762,46,1054,1555,939,287,1457,1934,1181,1592,434,628,344,995,1225,1028,706,621,881,881,100,1064,1410,335,70,1143,558,275,1635,1227,981,1360,31,1097,1770,648,336,523,937,283,1220,1964,115,1908,1554,831,1437,193,751,177,1562,584,1268,1810,451,685,1206,1406,1918,925,965,1221,1073,50,329,256,778,1404,1108,540,247,1485,1795,1131,1646,1532,1071,615,1764,922,1348,240,1547,1865,648,1434,1774,500,953,1840,1096,1619,1444,295,114,1392,1708,1023,1139,25,554,931,33,543,936,1907,1869,1376,705,970,1448,1085,590,499,718,1623,237,625,15,1717,765,161,1054,939,1120,264,1688,586,195,564,1737,1644,1219,693,697,222,1938,398,1033,1570,148,1764,724,1066,427,1151,120,853,605,406,1125,723,195,472,1832,804,274,895,221,528,1461,1598,110,1322,356,648,1768,1527,1443,349,1454,100,461,1410,1361,1318,411,493,781,548,1663,109,156,532,1642,1886,606,1161,743,1935,1525,1561,1892,1726,1418,1328,420,1699,83,891,1926,1225,1531,1060,315,632,1927,193,317,405,90,659,801,321,1315,113,298,408,1471,1308,1687,1192,170,1440,1558,1658,726,1405,343,1251,1324,122,1482,1790,1479,1649,850,1579,688,1297,1047,283,1860,554,941,1322,1242,1076,188,1824,324,1673,551,716,1611,1068,1964,1454,504,1030,45,1526,386,1797,831,525,822,688,872,1214,516,459,500,357,1412,98,1773,1043,15,416,1065,1154,45,1499,1927,1182,7,1270,1996,184,826,1586,678,1176,1697,1461,387,1942,1213,791,1414,1684,1514,660,835,1375,371,1232,1195,546,716,1832,1248,1375,513,1681,1422,1527,352,884,1595,1348,1196,693,1990,165,1830,1537,711,212,159,813,212,557,1843,215,1619,95,853,424,375,1040,1195,820,443,481,1310,1167,623,528,535,782,287,1972,1748,504,709,675,1005,136,285,106,143,659,1882,666,1929,532,1858,1532,1828,1078,1846,1886,1531,1945,1036,154,1022,390,1388,247,26,1414,1012,1656,538,449,1352,1106,680,1706,1995,1882,1220,1269,1684,1098,1184,1553,1464,136,1489,667,65,23,1711,701,1540,1173,1922,744,968,499,843,971,40,157,670,735,566,717,552,55,39,1597,450,1276,603,1430,831,1644,1277,1250,1710,905,1521,688,248,830,1720,734,420,475,29,1736,194,1470,1610,1264,3,1155,8,589,1361,1374,1462,483,189,1955,1241,1130,1759,681,1412,556,466,100,611,329,1492,1598,823,789,973,1095,1175,1089,1609,875,1142,490,1800,1516,1261,132,1378,586,533,229,153,1112,1755,1042,799,69,1504,1991,379,1066,1064,778,481,388,1936,1590,541,1318,937,832,11,1929,280,1888,1579,1974,1844,381,421,1478,1307,1744,1036,324,1468,196,1608,287,168,1726,1774,427,1730,1597,1727,747,1851,1006,1099,519,1676,1477,1159,1739,1185,890,511,94,1724,1690,1470,1175,583,1754,811,1888,321,1373,347,1389,1547,776,799,1579,1620,1387,668,937,547,871,83,1238,1908,1035,1005,1542,163,101,760,426,834,353,1178,1461,691,1256,643,1679,1366,463,1383,1655,82,896,332,134,1756,1598,1878,1977,439,94,1125,1323,1948,945,264,1250,726,1866,1764,384,1358,184,751,1287,192,220,150,1404,1649,1401,1794,1469,1703,688,1581,1112,798,1139,307,660,832,10,968,658 };
         cout << "\n2281. Sum of Total Strength of Wizards: " << sol2281.totalStrength(inputVI) << endl;
 
-        // 1567. Maximum Length of Subarray With Positive Product
+        // 1567. Maximum Length of Subarray With Positive Product (Medium)
         // Input: nums = [-1,-2,-3,0,1]
         // Output: 2
         // Input: nums = [-1,2]
@@ -742,5 +956,45 @@ namespace ArrayAndString
         // Output: 9
         inputVI = { 25,10,-28,-12,-13,-16,-13,28,5,21,28,4,0,-1 };
         cout << "\n1567. Maximum Length of Subarray With Positive Product: " << getMaxLen(inputVI) << endl;
+
+        // 1151. Minimum Swaps to Group All 1's Together (Medium)
+        // Input: data = [1,0,1,0,1]
+        // Output: 1
+        inputVI = { 1,0,1,0,1,0,0,1,1,0,1 };
+        cout << "\n1151. Minimum Swaps to Group All 1's Together: " << minSwaps(inputVI) << endl;
+
+        // 370. Range Addition (Medium)
+        // Input: length = 5, updates = [[1, 3, 2], [2, 4, 3], [0, 2, -2]]
+        // Output : [-2, 0, 3, 5, 3]
+        vector<vector<int>> inputVVI;
+        LeetCodeUtil::BuildIntMatrixFromString("[[1, 3, 2], [2, 4, 3], [0, 2, -2]]", &inputVVI);
+        auto resultVI = getModifiedArray(5, inputVVI);
+        cout << "\n370. Range Addition: " << endl;
+        LeetCodeUtil::PrintVector(resultVI);
+
+        // 2214. Minimum Health to Beat Game (Medium)
+        // Input: damage = [2,7,4,3], armor = 4
+        // Output: 13
+        cout << "\n2214. Minimum Health to Beat Game: " << minimumHealth({ 2,7,4,3 }, 4) << endl;
+
+        // 735. Asteroid Collision (Medium)
+        // Input: asteroids = [10,2,-5]
+        // Output: [10]
+        // Input: asteroids = [-2, -1, 1, 2]
+        // Output:  [-2,-1,1,2]
+        cout << "\n735. Asteroid Collision: " << endl;
+        resultVI = asteroidCollision({ -2,-2,1,-2 });
+        LeetCodeUtil::PrintVector(resultVI);
+
+        // 2193. Minimum Number of Moves to Make Palindrome (Hard)
+        // Input: s = "aabb"
+        // Output: 2
+        cout << "\n2193. Minimum Number of Moves to Make Palindrome: " <<
+            minMovesToMakePalindrome("aabb") << endl;
+
+        // 767. Reorganize String (Medium)
+        // Input: s = "aaab"
+        // Output : ""
+        cout << "\n767. Reorganize String: " << reorganizeString("aab") << endl;
     }
 }

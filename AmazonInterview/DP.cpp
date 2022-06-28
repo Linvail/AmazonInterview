@@ -272,7 +272,38 @@ namespace DP
         }
     };
 
+    //-----------------------------------------------------------------------------
+    // 2262. Total Appeal of A String (Hard)
+    // Topic: DP
+    //-----------------------------------------------------------------------------
+    class Solution2262
+    {
+    public:
+        long long appealSum(const string& inputString)
+        {
+            // "a b b c a"   a b c a b
+            //  0 1 2 3 4      1     4
+            // 4 - 0  = 4      4 - 1 = 3
+            vector<int> dp(inputString.size(), 0);
+            dp[0] = 1;
+            vector<int> charTable(26, -1);
+            charTable[inputString[0] - 'a'] = 0;
 
+            long long result = 1;
+            for (int i = 1; i < inputString.size(); i++)
+            {
+                dp[i] = dp[i - 1] + i - charTable[inputString[i] - 'a'];
+                charTable[inputString[i] - 'a'] = i;
+                result += dp[i];
+            }
+
+            return result;
+        }
+    };
+
+    //-----------------------------------------------------------------------------
+    // Test function
+    //-----------------------------------------------------------------------------
     void TestDP()
     {
         // 828. Count Unique Characters of All Substrings of a Given String (Hard)
@@ -285,13 +316,13 @@ namespace DP
             sol828.uniqueLetterString("ABA") << endl;
 
 
-        // 2272. Substring With Largest Variance
+        // 2272. Substring With Largest Variance (Hard)
         // Input: s = "aababbb"
         // Output: 3
         Solution2272 sol2272;
         cout << "\n2272. Substring With Largest Variance: " << sol2272.largestVariance("bbaaaaa") << endl;
 
-        // 472. Concatenated Words
+        // 472. Concatenated Words (Hard)
         // Input: words = ["cat","cats","catsdogcats","dog","dogcatsdog","hippopotamuses","rat","ratcatdogcat"]
         // Output: ["catsdogcats", "dogcatsdog", "ratcatdogcat"]
         Solution472 sol472;
@@ -300,12 +331,16 @@ namespace DP
         cout << "\n472. Concatenated Words: " << endl;
         LeetCodeUtil::PrintVector(resultVS);
 
-        // 926. Flip String to Monotone Increasing
+        // 926. Flip String to Monotone Increasing (Medium)
         // Input: s = "00011000"
         // Output: 2
         // Input: s = "010110"
         // Output: 2
         Solution926 sol926;
         cout << "\n926. Flip String to Monotone Increasing: " << sol926.minFlipsMonoIncr("00011000") << endl;
+
+        // 2262. Total Appeal of A String (Hard)
+        Solution2262 sol2262;
+        cout << "\n2262. Total Appeal of A String: " << sol2262.appealSum("code") << endl;
     }
 }

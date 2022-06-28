@@ -355,6 +355,257 @@ namespace TreeAndGraph
     };
 
     //-----------------------------------------------------------------------------
+    // 1597. Build Binary Expression Tree From Infix Expression (Hard)
+    //-----------------------------------------------------------------------------
+    class Solution1597
+    {
+    public:
+        TreeNode* expTree(const string& inputString)
+        {
+            // "2-3/(5*2)+1"
+            // Idea:
+            // 1. Scan infix expression from left to right. Build tree structure.
+            // For example, for "2-3", create a node(-), a node(2) and, a node(3).
+            // 2. For (...), call expTree() recursively for the string within.
+            // 3. Process * and / first, then process + and -. Process them by
+            // building the tree structure. For example, For nodes: '2', '-', '3',
+            // return a deque containing node '-' and '2' is the left child and '3'
+            // is the right child.
+            deque<TreeNode*> nodeQueue;
+            for (int i = 0; i < inputString.size(); ++i)
+            {
+                if (inputString[i] != '(')
+                {
+                    // No need to check ')', we will skip it when we get '('.
+                    nodeQueue.push_back(new TreeNode(inputString[i]));
+                }
+                else
+                {
+                    // We may encounter another '('. Need to include it.
+                    int remainingLeft = 1;
+                    int j = i + 1;
+                    for (; j < inputString.size(); ++j)
+                    {
+                        if (inputString[j] == '(') remainingLeft++;
+                        if (inputString[j] == ')') remainingLeft--;
+                        if (remainingLeft == 0) break;
+                    }
+                    // ( 1 + 2 )
+                    // 0 1 2 3 4
+                    string exp = inputString.substr(i + 1, j - i - 1);
+                    // Call recursively.
+                    nodeQueue.push_back(expTree(exp));
+                    i = j;
+                }
+            }
+
+            auto temp = processOperator(nodeQueue, '*', '/');
+            temp = processOperator(temp, '+', '-');
+
+            return temp.front();
+        }
+
+    private:
+
+        deque<TreeNode*> processOperator(const deque<TreeNode*> nodes, char op1, char op2)
+        {
+            deque<TreeNode*> result;
+            for (int i = 0; i < nodes.size(); ++i)
+            {
+                // deque: 1 * 2 + 3 => deque:  *  +  3
+                //                            / \
+                //                           1   2
+                // Note that we could meet a operator node here, but if it has children, then
+                // it should be regarded as a operand.
+                if (nodes[i]->left == nullptr &&
+                    ( nodes[i]->val == op1 || nodes[i]->val == op2 ))
+                {
+                    // Take out the last node from the queue and assign it to the left child node.
+                    nodes[i]->left = result.back();
+                    nodes[i]->right = nodes[i + 1];
+                    // Overwrite the last node of the queue.
+                    result.back() = nodes[i];
+                    i++;
+                }
+                else
+                {
+                    result.push_back(nodes[i]);
+                }
+            }
+            return result;
+        }
+    };
+
+    //-----------------------------------------------------------------------------
+    // 1730. Shortest Path to Get Food (Medium)
+    //-----------------------------------------------------------------------------
+    class Solution1730
+    {
+    public:
+        int getFood(vector<vector<char>>& grid)
+        {
+            // Idea: BFS.
+            // Any food will do, so we can start traversal from all food toward
+            // the starting point.
+            queue<pair<int, int>> unprocessed;
+            const int m = static_cast<int>( grid.size() );
+            const int n = static_cast<int>( grid[0].size() );
+
+            for (int i = 0; i < m; ++i)
+            {
+                for (int j = 0; j < n; ++j)
+                {
+                    if (grid[i][j] == '#')
+                    {
+                        // Put all food positions.
+                        unprocessed.emplace(i, j);
+                        grid[i][j] = 'X';
+                    }
+                }
+            }
+
+            vector<pair<int, int>> dirs{ {1, 0}, {0, 1}, {-1, 0}, {0, -1} };
+
+            int steps = 0;
+            while (!unprocessed.empty())
+            {
+                steps++;
+                const int count = unprocessed.size();
+                for (int i = 0; i < count; ++i)
+                {
+                    const int x = unprocessed.front().first;
+                    const int y = unprocessed.front().second;
+                    unprocessed.pop();
+
+                    for (int j = 0; j < dirs.size(); ++j)
+                    {
+                        const int newX = x + dirs[j].first;
+                        const int newY = y + dirs[j].second;
+
+                        if (newX < 0 || newX >= m || newY < 0 || newY >= n || grid[newX][newY] == 'X')
+                        {
+                            continue;
+                        }
+
+                        if (grid[newX][newY] == '*')
+                        {
+                            return steps;
+                        }
+
+                        // Mark this cell as obstacle since it has been visited.
+                        grid[newX][newY] = 'X';
+                        unprocessed.emplace(newX, newY);
+                    }
+                }
+            }
+
+            return -1;
+        }
+    };
+
+    //-----------------------------------------------------------------------------
+    // 863. All Nodes Distance K in Binary Tree
+    //-----------------------------------------------------------------------------
+    class Solution863
+    {
+    public:
+        vector<int> distanceK(TreeNode* root, TreeNode* target, int k)
+        {
+            // Build link to the parent.
+            unordered_map<TreeNode*, TreeNode*> link2Parent;
+            linkParent(root, link2Parent);
+
+            // From target node, do DFS to until reaching the k level.
+            queue<TreeNode*> nodeQueue{ {target} };
+            unordered_set<TreeNode*> visited{ target };
+
+            vector<int> result;
+
+            while (!nodeQueue.empty())
+            {
+                const int count = nodeQueue.size();
+                for (int i = 0; i < count; ++i)
+                {
+                    TreeNode* curr = nodeQueue.front();
+                    nodeQueue.pop();
+                    if(k == 0)
+                    {
+                        result.push_back(curr->val);
+                        continue;
+                    }
+
+                    if (curr->left && visited.count(curr->left) == 0)
+                    {
+                        nodeQueue.push(curr->left);
+                        visited.insert(curr->left);
+                    }
+                    if (curr->right && visited.count(curr->right) == 0)
+                    {
+                        nodeQueue.push(curr->right);
+                        visited.insert(curr->right);
+                    }
+                    if (link2Parent[curr] && visited.count(link2Parent[curr]) == 0)
+                    {
+                        nodeQueue.push(link2Parent[curr]);
+                        visited.insert(link2Parent[curr]);
+                    }
+                }
+                k--;
+            }
+
+            return result;
+        }
+
+    private:
+        void linkParent(TreeNode* root, unordered_map<TreeNode*, TreeNode*>& link2Parent)
+        {
+            if (!root) return;
+
+            if (root->left)
+            {
+                link2Parent[root->left] = root;
+                linkParent(root->left, link2Parent);
+            }
+            if (root->right)
+            {
+                link2Parent[root->right] = root;
+                linkParent(root->right, link2Parent);
+            }
+        }
+    };
+
+    //-----------------------------------------------------------------------------
+    // 582. Kill Process (Medium)
+    //-----------------------------------------------------------------------------
+    vector<int> killProcess(const vector<int>& pid, const vector<int>& ppid, int kill)
+    {
+        // Parent pid -> some children pid.
+        unordered_map<int, vector<int>> childrenMap;
+        const size_t len = pid.size();
+        for (int i = 0; i < len; ++i)
+        {
+            childrenMap[ppid[i]].push_back( pid[i] );
+        }
+
+        vector<int> result;
+        queue<int> unprocessed{ {kill} };
+        while (!unprocessed.empty())
+        {
+            const int curr = unprocessed.front();
+            result.push_back(curr);
+            unprocessed.pop();
+
+            for (const auto& child : childrenMap[curr])
+            {
+                unprocessed.push(child);
+            }
+        }
+
+        return result;
+    }
+
+
+    //-----------------------------------------------------------------------------
     // Test function.
     //-----------------------------------------------------------------------------
     void TestTreeAndGraph()
@@ -404,5 +655,39 @@ namespace TreeAndGraph
         Solution675 sol675;
         cout << "\n675. Cut Off Trees for Golf Event: " << sol675.cutOffTree(image) << endl;
 
+        // 1597. Build Binary Expression Tree From Infix Expression (Hard)
+        // Input: s = "2-3/(5*2)+1"
+        // Output: [+, -, 1, 2, / , null, null, null, null, 3, *, null, null, 5, 2]
+        Solution1597 sol1597;
+        TreeNode* node = sol1597.expTree("(1+(2+3))*4");
+        cout << "\n1597. Build Binary Expression Tree From Infix Expression: " << endl;
+        PrintTreeLevelOrder(node);
+
+        // 1730. Shortest Path to Get Food (Medium)
+        // Input: grid = [["X","X","X","X","X","X"],["X","*","O","O","O","X"],["X","O","O","#","O","X"],["X","X","X","X","X","X"]]
+        // Output: 3
+        vector<vector<char>> inputVVS;
+        BuildCharMatrixFromString("[[X,X,X,X,X,X],[X,*,O,O,O,X],[X,O,O,#,O,X],[X,X,X,X,X,X]]", &inputVVS);
+        Solution1730 sol1730;
+        cout << "\n1730. Shortest Path to Get Food: " << sol1730.getFood(inputVVS) << endl;
+
+        // 863. All Nodes Distance K in Binary Tree
+        // Input: root = [3,5,1,6,2,0,8,null,null,7,4], target = 5, k = 2
+        // Output: [7, 4, 1]
+        // Input: root = [0,2,1,null,null,3] target = 3, k = 3
+        // Output: [2]
+        root = BuildTreeFromLevelOrderString("[0,2,1,null,null,3]");
+        Solution863 sol863;
+        TreeNode* target = root->right->left;
+        auto resultVI = sol863.distanceK(root, target, 3);
+        cout << "\n863. All Nodes Distance K in Binary Tree: " << endl;
+        PrintVector(resultVI);
+
+        // 582. Kill Process
+        // Input: pid = [1,3,10,5], ppid = [3,0,5,3], kill = 5
+        // Output: [5, 10]
+        cout << "\n582. Kill Process: " << endl;
+        resultVI = killProcess({ 1,3,10,5 }, { 3,0,5,3 }, 5);
+        LeetCodeUtil::PrintVector(resultVI);
     }
 }

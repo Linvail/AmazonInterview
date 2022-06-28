@@ -5,6 +5,9 @@
 #include <vector>
 #include <unordered_map>
 #include <map>
+#include <set>
+#include <unordered_set>
+#include <string_view> // C++17
 
 namespace SortingAndSearching
 {
@@ -152,11 +155,158 @@ namespace SortingAndSearching
     };
 
     //-----------------------------------------------------------------------------
+    // 2102. Sequentially Ordinal Rank Tracker (Hard)
+    //-----------------------------------------------------------------------------
+    // The difficult part is how to minimize the adjustment of the iterator.
+    // The naive approach will cause TLE on Leetcode.
+    class SORTracker
+    {
+    public:
+
+        struct Place
+        {
+            string name;
+            int score;
+
+            // Don't forget the 'const' in the end.
+            bool operator<(const Place& other) const
+            {
+                if (score == other.score)
+                {
+                    return name < other.name;
+                }
+                else
+                {
+                    return score > other.score;
+                }
+            }
+
+            Place(const string& aName, int aScore)
+                : name(aName), score(aScore) {}
+        };
+
+    public:
+        SORTracker() : placeStore(), iter(placeStore.begin())
+        {
+        }
+
+        void add(string name, int score)
+        {
+            Place p(name, score);
+            placeStore.insert(p);
+            if (iter == placeStore.end() || p < *iter)
+            {
+                std::advance(iter, -1);
+            }
+        }
+
+        string get()
+        {
+            auto& name = iter->name;
+            iter++;
+            return name;
+        }
+
+    private:
+
+        set<Place> placeStore;
+        set<Place>::iterator iter;
+    };
+
+    //-----------------------------------------------------------------------------
+    // 1438. Longest Continuous Subarray With Absolute Diff Less Than or Equal to Limit (Medium)
+    //-----------------------------------------------------------------------------
+    int longestSubarray(vector<int>& nums, int limit)
+    {
+        // Maintain a sliding window. Stretch to the right. When it becomes
+        // invalid, increment the left boundary. Keep calculating the max length.
+        multiset<int> numSet;
+        int j = 0;
+        int result = 0;
+        for (int i = 0; i < nums.size(); ++i)
+        {
+            numSet.insert(nums[i]);
+            if (*numSet.rbegin() - *numSet.begin() > limit)
+            {
+                // Remove the element on the left boundary.
+                numSet.erase(numSet.find(nums[j]));
+                // Increment the left boundary.
+                j++;
+            }
+            result = max(result, i - j + 1);
+        }
+
+        return result;
+    }
+
+    //-----------------------------------------------------------------------------
+    // 1044. Longest Duplicate Substring (Hard)
+    //-----------------------------------------------------------------------------
+    class Solution1044
+    {
+    public:
+        string longestDupSubstring(string s)
+        {
+            // To get better performance, this question requires two techniques
+            // 1. binary search on the length of the duplicate substring.
+            // 2. A quick algorithm to check whether a duplicate substring with
+            //    length k exists. Rabin¡VKarp algorithm is one solution.
+            //    But it is not trivial, so the following code won't implement it.
+
+            // To avoid string copy, the following code will use string_view, which
+            // requires C++17.
+
+            // The min length of a duplicate substring.
+            size_t left = 1;
+            size_t right = s.size() - 1;
+
+            // To remember the longest.
+            std::string_view longest;
+            // Set to detect if a substring occurred before.
+            unordered_set<string_view> subStrSet;
+            // Use <= to handle the case left = right = 1.
+            while (left <= right)
+            {
+                auto midLen = left + ( right - left ) / 2;
+                bool found = false;
+                for (size_t i = 0; i < s.size() - midLen + 1; ++i)
+                {
+                    auto [it, inserted] = subStrSet.emplace(s.data() + i, midLen);
+                    if (!inserted)
+                    {
+                        found = true;
+                        longest = *it;
+                        break;
+                    }
+                }
+
+                if (found)
+                {
+                    left = midLen + 1;
+                }
+                else
+                {
+                    right = midLen - 1;
+                }
+
+                subStrSet.clear();
+            }
+
+            string result(longest);
+            return result;
+        }
+    };
+
+    //-----------------------------------------------------------------------------
+    // 1648. Sell Diminishing-Valued Colored Balls (Medium)
+    //-----------------------------------------------------------------------------
+
+    //-----------------------------------------------------------------------------
     // Test function.
     //-----------------------------------------------------------------------------
     void TestSortingAndSearching()
     {
-        // 973. K Closest Points to Origin
+        // 973. K Closest Points to Origin (Medium)
         // Input: points = [[1,3],[-2,2]], k = 1
         // Output: [[-2, 2]]
         // Input: points = [[3,3],[5,-1],[-2,4]], k = 2
@@ -209,5 +359,43 @@ namespace SortingAndSearching
         BuildIntMatrixFromString("[[1,3],[2,2],[3,1]]", &inputMatrix);
         cout << "\n1710. Maximum Units on a Truck: " << sol1710.maximumUnits(inputMatrix, 4) << endl;
 
+        // 2102. Sequentially Ordinal Rank Tracker (Hard)
+        cout << "\n2102. Sequentially Ordinal Rank Tracker" << endl;
+        SORTracker tracker; // Initialize the tracker system.
+        tracker.add("bradford", 2); // Add location with name="bradford" and score=2 to the system.
+        tracker.add("branford", 3); // Add location with name="branford" and score=3 to the system.
+        cout << tracker.get() << endl;              // The sorted locations, from best to worst, are: branford, bradford.
+                                    // Note that branford precedes bradford due to its higher score (3 > 2).
+                                    // This is the 1st time get() is called, so return the best location: "branford".
+        tracker.add("alps", 2);     // Add location with name="alps" and score=2 to the system.
+        cout <<  tracker.get() << endl;              // Sorted locations: branford, alps, bradford.
+                                    // Note that alps precedes bradford even though they have the same score (2).
+                                    // This is because "alps" is lexicographically smaller than "bradford".
+                                    // Return the 2nd best location "alps", as it is the 2nd time get() is called.
+        tracker.add("orland", 2);   // Add location with name="orland" and score=2 to the system.
+        cout << tracker.get() << endl;              // Sorted locations: branford, alps, bradford, orland.
+                                    // Return "bradford", as it is the 3rd time get() is called.
+        tracker.add("orlando", 3);  // Add location with name="orlando" and score=3 to the system.
+        cout << tracker.get() << endl;              // Sorted locations: branford, orlando, alps, bradford, orland.
+                                    // Return "bradford".
+        tracker.add("alpine", 2);   // Add location with name="alpine" and score=2 to the system.
+        cout << tracker.get() << endl;              // Sorted locations: branford, orlando, alpine, alps, bradford, orland.
+                                    // Return "bradford".
+        cout << tracker.get() << endl;              // Sorted locations: branford, orlando, alpine, alps, bradford, orland.
+                                    // Return "orland".
+
+
+        // 1438. Longest Continuous Subarray With Absolute Diff Less Than or Equal to Limit (Medium)
+        // Input: nums = [10,1,2,4,7,2], limit = 5
+        // Output: 4
+        inputVI = { 10,1,2,4,7,2 };
+        cout << "\n1438. Longest Continuous Subarray With Absolute Diff Less Than or Equal to Limit: "
+            << longestSubarray(inputVI, 5) << endl;
+
+        // 1044. Longest Duplicate Substring (Hard)
+        // Input: s = "banana"
+        // Output: "ana"
+        Solution1044 sol1044;
+        cout << "\n1044. Longest Duplicate Substring: " << sol1044.longestDupSubstring("abca") << endl;
     }
 }

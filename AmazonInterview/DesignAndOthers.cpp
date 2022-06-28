@@ -6,6 +6,9 @@
 #include <unordered_map>
 #include <vector>
 #include <queue>
+#include <functional>
+#include <string>
+#include <stack>
 
 namespace DesignAndOthers
 {
@@ -137,7 +140,7 @@ namespace DesignAndOthers
     public:
         vector<int> prisonAfterNDays(vector<int>& cells, int n)
         {
-            const int len = cells.size();
+            const int len = static_cast<int>( cells.size() );
             // Great n would cause TLE if we use brute force approach.
             // The key is to know there is actually a cycle for certain n number.
             unordered_map<string, int> cache;
@@ -242,6 +245,107 @@ namespace DesignAndOthers
     };
 
     //-----------------------------------------------------------------------------
+    // 1628. Design an Expression Tree With Evaluate Function (Medium)
+    //-----------------------------------------------------------------------------
+    /**
+     * This is the interface for the expression tree Node.
+     * You should not remove it, and you can define some classes to implement it.
+     */
+
+    class Node
+    {
+    public:
+        virtual ~Node() {};
+        virtual int evaluate() const = 0;
+
+        Node* left;
+        Node* right;
+
+    protected:
+        // define your fields here
+        static map<char, std::function<int(const Node*, const Node*)>> operatorMap;
+    };
+
+    map<char, std::function<int(const Node*, const Node*)>> Node::operatorMap;
+
+    class NodeImpl : public Node
+    {
+    public:
+
+        NodeImpl(const string& value) : val(value) {}
+
+        string val;
+
+        static void initOperator();
+        int evaluate() const override;
+    };
+
+    void NodeImpl::initOperator()
+    {
+        operatorMap['+'] = [](const Node* left, const Node* right) { return left->evaluate() + right->evaluate(); };
+        operatorMap['-'] = [](const Node* left, const Node* right) { return left->evaluate() - right->evaluate(); };
+        operatorMap['*'] = [](const Node* left, const Node* right) { return left->evaluate() * right->evaluate(); };
+        operatorMap['/'] = [](const Node* left, const Node* right) { return left->evaluate() / right->evaluate(); };
+    }
+
+    int NodeImpl::evaluate() const
+    {
+        if (isdigit(val.back()))
+        {
+            return stoi(val);
+        }
+
+        int result = operatorMap[val.back()](left, right);
+        return result;
+    }
+
+    /**
+     * This is the TreeBuilder class.
+     * You can treat it as the driver code that takes the postinfix input
+     * and returns the expression tree represnting it as a Node.
+     */
+
+    class TreeBuilder
+    {
+    public:
+        Node* buildTree(const vector<string>& postfix)
+        {
+            NodeImpl::initOperator();
+
+            stack<Node*> opStack;
+            for (int i = 0; i < postfix.size(); ++i)
+            {
+                const string& curr = postfix[i];
+                if (isdigit(curr.back()))
+                {
+                    Node* newNode = new NodeImpl(curr);
+                    opStack.push(newNode);
+                }
+                else
+                {
+                    Node* op1 = opStack.top();
+                    opStack.pop();
+                    Node* op2 = opStack.top();
+                    opStack.pop();
+                    Node* newNode = new NodeImpl(curr);
+                    newNode->left = op2;
+                    newNode->right = op1;
+                    opStack.push(newNode);
+                }
+            }
+
+            return opStack.top();
+        }
+    };
+
+    /**
+     * Your TreeBuilder object will be instantiated and called as such:
+     * TreeBuilder* obj = new TreeBuilder();
+     * Node* expTree = obj->buildTree(postfix);
+     * int ans = expTree->evaluate();
+     */
+
+    //-----------------------------------------------------------------------------
     // Test function
     //-----------------------------------------------------------------------------
     void TestDesignAndOthers()
@@ -296,5 +400,13 @@ namespace DesignAndOthers
         auto resultVVS = sol1268.suggestedProducts(inputVS, "mouse");
         cout << "\n1268. Search Suggestions System: " << endl;
         LeetCodeUtil::PrintMatrix(resultVVS);
+
+        // 1628. Design an Expression Tree With Evaluate Function (Medium)
+        // Input: s = ["3","4","+","2","*","7","/"]
+        // Output: 2
+        TreeBuilder builder;
+        Node* root = builder.buildTree({ "3","4","+","2","*","7","/" });
+        cout << "\n1628. Design an Expression Tree With Evaluate Function: " << root->evaluate() << endl;
+
     }
 }
