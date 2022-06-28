@@ -346,6 +346,159 @@ namespace DesignAndOthers
      */
 
     //-----------------------------------------------------------------------------
+    // 1603. Design Parking System (Easy)
+    //-----------------------------------------------------------------------------
+    class ParkingSystem
+    {
+    public:
+        ParkingSystem(int big, int medium, int small) : parkingLot({ big, medium, small })
+        {
+        }
+
+        bool addCar(int carType)
+        {
+            int& remaining = parkingLot[carType - 1];
+            if (remaining > 0)
+            {
+                remaining--;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+    private:
+        vector<int> parkingLot;
+    };
+
+    //-----------------------------------------------------------------------------
+    // 772. Basic Calculator III (Hard)
+    //
+    // Similar questions:
+    // Build Binary Expression Tree From Infix Expression (Solved in TreeAndGraph.cpp)
+    //-----------------------------------------------------------------------------
+    class Solution772
+    {
+    public:
+
+        struct Node
+        {
+            bool isOperand = false;
+            char operand;
+            int value = 0;
+
+            Node(bool isOp, char op, int val)
+                : isOperand(isOp), operand(op), value(val)
+            {}
+        };
+
+        int calculate(const string& s)
+        {
+            // Idea: Use recursion for (XXXX) first.
+            // For a string without (), like "2+2x4", we should process '*' and '/'
+            // first, then process '+', '-'. Return the value in the end.
+            int temp = -1;
+            deque<Node> elements;
+            for (int i = 0; i < s.size(); ++i)
+            {
+                if (s[i] != '(')
+                {
+                    if (!isdigit(s[i]))
+                    {
+                        if (temp != -1)
+                        {
+                            // A operand may follow a pair of (xxx). In that case, temp will be
+                            // 0, we must not add it.
+                            elements.emplace_back(false, ' ', temp);
+                        }
+                        elements.emplace_back(true, s[i], 0);
+                        temp = 0;
+                    }
+                    else
+                    {
+                        temp = temp == -1 ? s[i] - '0' : temp * 10 + ( s[i] - '0' );
+                    }
+                }
+                else
+                {
+                    temp = -1;
+                    // We may encounter another '('. Need to include it.
+                    int remainingLeft = 1;
+                    int j = i + 1;
+                    for (; j < s.size(); ++j)
+                    {
+                        if (s[j] == '(') remainingLeft++;
+                        if (s[j] == ')') remainingLeft--;
+
+                        if (remainingLeft == 0)
+                        {
+                            break;
+                        }
+                    }
+                    // 1 * ( 2 + 3 )
+                    //     ^       ^
+                    //     2       6
+                    string sub = s.substr(i + 1, j - i - 1);
+                    int val = calculate(sub);
+                    elements.emplace_back(false, ' ', val);
+
+                    i = j;
+                }
+            }
+            if (temp != -1)
+            {
+                elements.emplace_back(false, ' ', temp);
+            }
+
+            elements = processOperator(elements, '*', '/');
+            elements = processOperator(elements, '+', '-');
+
+            return elements.front().value;
+        }
+
+    private:
+        deque<Node> processOperator(const deque<Node>& nodes, char op1, char op2)
+        {
+            deque<Node> result;
+            for (int i = 0; i < nodes.size(); ++i)
+            {
+                // deque: 1 * 2 + 3 => deque:  2  +  3
+                const char op = nodes[i].operand;
+                if (op == op1 || op == op2)
+                {
+                    int left = result.back().value;
+                    result.pop_back();
+
+                    if (op == '+')
+                    {
+                        result.emplace_back(false, ' ', left + nodes[i + 1].value);
+                    }
+                    else if (op == '-')
+                    {
+                        result.emplace_back(false, ' ', left - nodes[i + 1].value);
+                    }
+                    else if (op == '*')
+                    {
+                        result.emplace_back(false, ' ', left * nodes[i + 1].value);
+                    }
+                    else
+                    {
+                        result.emplace_back(false, ' ', left / nodes[i + 1].value);
+                    }
+                    i++;
+                }
+                else
+                {
+                    result.push_back(nodes[i]);
+                }
+            }
+            return result;
+        }
+    };
+
+    //-----------------------------------------------------------------------------
     // Test function
     //-----------------------------------------------------------------------------
     void TestDesignAndOthers()
@@ -408,5 +561,12 @@ namespace DesignAndOthers
         Node* root = builder.buildTree({ "3","4","+","2","*","7","/" });
         cout << "\n1628. Design an Expression Tree With Evaluate Function: " << root->evaluate() << endl;
 
+        // 772. Basic Calculator III (Hard)
+        // Input: s = "6-4/2"
+        // Output: 4
+        // Input: s = "2*(5+5*2)/3+(6/2+8)"
+        // Output: 21
+        Solution772 sol772;
+        cout << "\n772. Basic Calculator III: " << sol772.calculate("0") << endl;
     }
 }

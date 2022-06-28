@@ -10,6 +10,7 @@
 #include <unordered_set>
 #include <sstream>
 #include <stack>
+#include <set>
 #include <numeric>
 
 using namespace std;
@@ -512,7 +513,6 @@ namespace ArrayAndString
         return result;
     }
 
-
     //-----------------------------------------------------------------------------
     // 2281. Sum of Total Strength of Wizards (Hard)
     //
@@ -874,6 +874,161 @@ namespace ArrayAndString
     }
 
     //-----------------------------------------------------------------------------
+    // 1291. Sequential Digits (Medium)
+    //
+    // 10 <= low <= high <= 10^9
+    //-----------------------------------------------------------------------------
+    vector<int> sequentialDigits(int low, int high)
+    {
+        // One solution is just write down all possible digits, like
+        // { 12,23,34,45,56,67,78,89,123,234,345,456,567,678,789,1234,2345,3456,4567,5678,6789,
+        // 12345, 23456, 34567, 45678, 56789, 123456, 234567, 345678, 456789, 1234567, 2345678,
+        // 3456789, 12345678, 23456789, 123456789 }
+        // And put those >= low and <= high into the result vector.
+
+        // The following code shows another solution.
+        queue<int> candidates;
+        for (int i = 1; i <= 9; ++i)
+        {
+            candidates.push(i);
+        }
+
+        vector<int> result;
+        while (!candidates.empty())
+        {
+            auto num = candidates.front();
+            candidates.pop();
+
+            if (num >= low && num <= high)
+            {
+                result.push_back(num);
+            }
+
+            // candidates is a queue, if num is greater than high, then everything
+            // beyond num will be greater than high. So, we can break.
+            if (num > high)
+            {
+                break;
+            }
+
+            // If 12 is eligible, we will try 123, then 1234...
+            int lastDigit = num % 10;
+            if (lastDigit != 9)
+            {
+                // Exclude 9 since we are unable to add anything after it.
+                candidates.push(num * 10 + ( lastDigit + 1 ));
+            }
+        }
+
+        return result;
+    }
+
+    //-----------------------------------------------------------------------------
+    // 1856. Maximum Subarray Min-Product (Medium)
+    //
+    // Related to 907, 2104, 2281
+    //-----------------------------------------------------------------------------
+    class Solution1856
+    {
+    public:
+        int maxSumMinProduct(const vector<int>& nums)
+        {
+            // We need to a monotonic increasing stack and a prefix sum array.
+            const int len = nums.size();
+            vector<long long> prefixSum(len + 1, 0);
+            // assume nums =   [1 2 3]
+            // prefixSum =   [0 1 3 6]
+            // partial_sum causes stack overflow on int.
+            //std::partial_sum(nums.begin(), nums.end(), prefixSum.begin() + 1);
+            for (int i = 1; i <= len; ++i)
+            {
+                prefixSum[i] = prefixSum[i - 1] + nums[i - 1];
+            }
+
+            int modulo = static_cast<int>( 1e9 + 7 );
+            long long result = 0;
+            stack<size_t> monoStack;
+            for (size_t i = 0; i <= len; ++i)
+            {
+                const int value = i != len ? nums[i] : INT_MIN;
+                while (!monoStack.empty() && nums[monoStack.top()] > value)
+                {
+                    // [2, 5, 7, 6, 3, 4, 8, 1]
+                    //           ^  We meet
+                    //        $ Need to pop 7, which is the previous greater number.
+                    size_t idxGreat = monoStack.top(); // 2 of 7.
+                    monoStack.pop();
+                    size_t idxLess = monoStack.empty() ? -1 : monoStack.top(); // 1 of 5
+
+                    // Prefix sum = [0 2 7 14 20 ...]
+                    //                   ^ ^ 14 - 7 = 7
+                    long long product = nums[idxGreat] * ( prefixSum[i] - prefixSum[idxLess + 1] );
+                    result = max(result, product);
+                }
+
+                if (i != len)
+                {
+                    monoStack.push(i);
+                }
+            }
+
+            return result % modulo;
+        }
+    };
+
+    //-----------------------------------------------------------------------------
+    // 239. Sliding Window Maximum (Hard)
+    //-----------------------------------------------------------------------------
+    vector<int> maxSlidingWindow(const vector<int>& nums, int k)
+    {
+        #if( SLOW )
+        int left = 0;
+        int right = left + k - 1;
+
+        multiset<int> numSet(nums.begin(), nums.begin() + k);
+        int maxNum = *numSet.rbegin();
+        vector<int> result{ maxNum };
+
+        for (; right < nums.size() - 1; )
+        {
+            auto it = numSet.find(nums[left]);
+            // Note that erase(val) will remove ALL elements which are that value.
+            // However, we just need to remove one, so we use erase(iterator).
+            numSet.erase(it);
+            left++;
+            right++;
+            numSet.insert(nums[right]);
+            maxNum = *numSet.rbegin();
+            result.push_back(maxNum);
+        }
+
+        return result;
+        #else
+
+        // Monotonic decreasing queue to store the index.
+        deque<int> queue;
+        vector<int> ans;
+        for (int left = 0; left < nums.size(); ++left)
+        {
+            // As the window move on, element nums[left-k] will be outdated.
+            if (!queue.empty() && queue.front() == left - k) queue.pop_front();
+            // Now we are ready to push our new element nums[left]'s index into the queue.
+            // But before that, we should clear elements which is smaller then nums[left].
+            // Why? Because if nums[left] is bigger then nums[i],
+            // there will be no way for nums[i] be selected as the max number in range (left-k, left]
+            while (!queue.empty() && nums[queue.back()] < nums[left]) queue.pop_back();
+            // Now push the index into our queue.
+            queue.push_back(left);
+            // Okay, now nums[queue.front()] mush be the max number in range (left-k, left]
+            if (left - k + 1 >= 0) ans.push_back(nums[queue.front()]);
+        }
+        return ans;
+
+        #endif
+    }
+
+
+    //-----------------------------------------------------------------------------
     // Test function
     //-----------------------------------------------------------------------------
     void TestArrayAndString()
@@ -996,5 +1151,27 @@ namespace ArrayAndString
         // Input: s = "aaab"
         // Output : ""
         cout << "\n767. Reorganize String: " << reorganizeString("aab") << endl;
+
+        // 1291. Sequential Digits (Medium)
+        // Input: low = 1000, high = 13000
+        // Output: [1234, 2345, 3456, 4567, 5678, 6789, 12345]
+        cout << "\n1291. Sequential Digits: " << endl;
+        resultVI = sequentialDigits(1000, 13000);
+        LeetCodeUtil::PrintVector(resultVI);
+
+        // 1856. Maximum Subarray Min-Product (Medium)
+        // Input: nums = [1,2,3,2]
+        // Output: 14
+        Solution1856 sol1856;
+        cout << "\n1856. Maximum Subarray Min-Product: " << sol1856.maxSumMinProduct({ 3,1,5,6,4,2 }) << endl;
+
+        // 239. Sliding Window Maximum (Hard)
+        // Input: nums = [1,3,-1,-3,5,3,6,7], k = 3
+        // Output: [3, 3, 5, 5, 6, 7]
+        // Input: nums = [-7, -8, 7, 5, 7, 1, 6, 0], k = 4
+        // Output: [7,7,7,7,7]
+        cout << "\n239. Sliding Window Maximum: " << endl;
+        resultVI = maxSlidingWindow({ -7, -8, 7, 5, 7, 1, 6, 0 }, 4);
+        LeetCodeUtil::PrintVector(resultVI);
     }
 }

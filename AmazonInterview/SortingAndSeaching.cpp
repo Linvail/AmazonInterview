@@ -302,6 +302,57 @@ namespace SortingAndSearching
     //-----------------------------------------------------------------------------
 
     //-----------------------------------------------------------------------------
+    // 2055. Plates Between Candles (Medium)
+    // Topic: Binary search, prefix sum.
+    //-----------------------------------------------------------------------------
+    vector<int> platesBetweenCandles(string s, vector<vector<int>>& queries)
+    {
+        const size_t len = s.size();
+        // Note that the elements will be sorted in ascending order.
+        vector<size_t> candleSet;
+        for (int i = 0; i < len; ++i)
+        {
+            if (s[i] == '|')
+            {
+                candleSet.push_back(i);
+            }
+        }
+
+        vector<int> result;
+        for (const auto& range : queries)
+        {
+            int sum = 0;
+            // Find the candle whose index is not less than range[0].
+            auto it = std::lower_bound(candleSet.begin(), candleSet.end(), range[0]);
+            size_t startCandle = it - candleSet.begin();
+            // upper_bound() finds the first candle whose index is greater than range[1].
+            // We minus it by 1 to get the last candle in the range.
+            size_t endCandle = std::upper_bound(candleSet.begin(), candleSet.end(), range[1]) - candleSet.begin();
+            if (endCandle > 0)
+            {
+                // Note this might make endCandle become equal to startCandle.
+                endCandle -= 1;
+            }
+
+            if (startCandle < endCandle)
+            {
+                // The total elements within the range is candleSet[endCandle] - candleSet[startCandle] + 1.
+                // The total candles within the range is endCandle - startCandle + 1.
+                // The 1st minus the 2nd will be the number of plates.
+                result.push_back( static_cast<int>( candleSet[endCandle] - candleSet[startCandle] - ( endCandle - startCandle ) ));
+            }
+            else
+            {
+                result.push_back(0);
+            }
+
+        }
+
+        return result;
+    }
+
+
+    //-----------------------------------------------------------------------------
     // Test function.
     //-----------------------------------------------------------------------------
     void TestSortingAndSearching()
@@ -397,5 +448,15 @@ namespace SortingAndSearching
         // Output: "ana"
         Solution1044 sol1044;
         cout << "\n1044. Longest Duplicate Substring: " << sol1044.longestDupSubstring("abca") << endl;
+
+        // 2055. Plates Between Candles (Medium)
+        // Input: s = "**|**|***|", queries = [[2,5],[5,9]]
+        // Output: [2, 3]
+        // "***" [[2, 2]]
+        //
+        BuildIntMatrixFromString("[[2, 2]]", &inputMatrix);
+        auto resultVI = platesBetweenCandles("***", inputMatrix);
+        cout << "\n2055. Plates Between Candles: " << endl;
+        LeetCodeUtil::PrintVector(resultVI);
     }
 }

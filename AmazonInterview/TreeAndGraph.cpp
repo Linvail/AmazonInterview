@@ -356,6 +356,10 @@ namespace TreeAndGraph
 
     //-----------------------------------------------------------------------------
     // 1597. Build Binary Expression Tree From Infix Expression (Hard)
+    //
+    // Similar questions:
+    // Basic Calculator III
+    // Check If Two Expression Trees are Equivalent
     //-----------------------------------------------------------------------------
     class Solution1597
     {
@@ -407,7 +411,7 @@ namespace TreeAndGraph
 
     private:
 
-        deque<TreeNode*> processOperator(const deque<TreeNode*> nodes, char op1, char op2)
+        deque<TreeNode*> processOperator(const deque<TreeNode*>& nodes, char op1, char op2)
         {
             deque<TreeNode*> result;
             for (int i = 0; i < nodes.size(); ++i)
@@ -604,6 +608,70 @@ namespace TreeAndGraph
         return result;
     }
 
+    //-----------------------------------------------------------------------------
+    // 909. Snakes and Ladders (Medium)
+    //-----------------------------------------------------------------------------
+    class Solution909
+    {
+    public:
+        int snakesAndLadders(vector<vector<int>>& board)
+        {
+            n = board.size();
+
+            int steps = 0;
+            queue<int> unprocessed{ {1} };
+            vector<int> visited(n * n, false);
+
+            while (!unprocessed.empty())
+            {
+                const int len = unprocessed.size();
+                for (int i = 0; i < len; ++i)
+                {
+                    const int num = unprocessed.front();
+                    unprocessed.pop();
+                    if (num == n * n)
+                    {
+                        return steps;
+                    }
+
+                    for (int j = 1; j <= 6 && num + j <= n * n; ++j)
+                    {
+                        int nextValue = getValueForNumber(board, num + j);
+                        // If nextValue is not -1, then nextValue is just the next destination.
+                        // Otherwise, the destination is num + j.
+                        if (nextValue == -1)
+                        {
+                            nextValue = num + j;
+                        }
+
+                        if (visited[nextValue - 1]) continue;
+
+                        unprocessed.push(nextValue);
+                        visited[nextValue - 1] = true;
+                    }
+                }
+
+                steps++;
+            }
+
+            return -1;
+        }
+
+    private:
+        // The cell of the board is numbered.
+        // We need a function to convert the number to coordinate (x, y), so
+        // we can fetch the number at that coordinate (x, y).
+        int getValueForNumber(const vector<vector<int>>& board, int number)
+        {
+            const int zeroBasedN = n - 1;
+            int x = zeroBasedN - ( number - 1 ) / n;
+            int y = ( (zeroBasedN - x) % 2 == 0 ) ? ( number - 1 ) % n : zeroBasedN - ( ( number - 1 ) % n );
+
+            return board[x][y];
+        }
+
+        int n = 0;
+    };
 
     //-----------------------------------------------------------------------------
     // Test function.
@@ -671,7 +739,7 @@ namespace TreeAndGraph
         Solution1730 sol1730;
         cout << "\n1730. Shortest Path to Get Food: " << sol1730.getFood(inputVVS) << endl;
 
-        // 863. All Nodes Distance K in Binary Tree
+        // 863. All Nodes Distance K in Binary Tree (Medium)
         // Input: root = [3,5,1,6,2,0,8,null,null,7,4], target = 5, k = 2
         // Output: [7, 4, 1]
         // Input: root = [0,2,1,null,null,3] target = 3, k = 3
@@ -683,11 +751,25 @@ namespace TreeAndGraph
         cout << "\n863. All Nodes Distance K in Binary Tree: " << endl;
         PrintVector(resultVI);
 
-        // 582. Kill Process
+        // 582. Kill Process (Medium)
         // Input: pid = [1,3,10,5], ppid = [3,0,5,3], kill = 5
         // Output: [5, 10]
         cout << "\n582. Kill Process: " << endl;
         resultVI = killProcess({ 1,3,10,5 }, { 3,0,5,3 }, 5);
         LeetCodeUtil::PrintVector(resultVI);
+
+        // 909. Snakes and Ladders (Medium)
+        // Input: board = [[-1,-1,-1,-1,-1,-1],[-1,-1,-1,-1,-1,-1],[-1,-1,-1,-1,-1,-1],[-1,35,-1,-1,13,-1],[-1,-1,-1,-1,-1,-1],[-1,15,-1,-1,-1,-1]]
+        // Output: 4
+        // [[-1,-1,-1],[-1,9,8],[-1,8,9]]
+        // 1
+        // [[-1,-1,19,10,-1],[2,-1,-1,6,-1],[-1,17,-1,19,-1],[25,-1,20,-1,-1],[-1,-1,-1,-1,15]]
+        // 2
+        string inputStr = "[[-1,-1,-1,-1,-1,-1],[-1,-1,-1,-1,-1,-1],[-1,-1,-1,-1,-1,-1],[-1,35,-1,-1,13,-1],[-1,-1,-1,-1,-1,-1],[-1,15,-1,-1,-1,-1]]";
+        vector<vector<int>> inputVVI;
+        LeetCodeUtil::BuildIntMatrixFromString(inputStr, &inputVVI);
+        Solution909 sol909;
+        cout << "\n909. Snakes and Ladders: " << sol909.snakesAndLadders(inputVVI) << endl;
+
     }
 }
