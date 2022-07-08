@@ -1027,6 +1027,86 @@ namespace ArrayAndString
         #endif
     }
 
+    //-----------------------------------------------------------------------------
+    // 134. Gas Station (Medium)
+    //-----------------------------------------------------------------------------
+    int canCompleteCircuit(const vector<int>& gas, const vector<int>& cost)
+    {
+        const size_t len = gas.size();
+
+        int totalGas = std::accumulate(gas.begin(), gas.end(), 0);
+        int totalCost = std::accumulate(cost.begin(), cost.end(), 0);
+        if (totalCost > totalGas)
+        {
+            return -1;
+        }
+
+        for (int i = 0; i < len; ++i)
+        {
+            bool reachable = true;
+            int vol = 0;
+            for (int j = i; j < i + len; ++j)
+            {
+                const size_t idx = j % len;
+                vol += gas[idx] - cost[idx];
+                if (vol < 0)
+                {
+                    reachable = false;
+                    if (j >= len)
+                    {
+                        // Any position before i has been tested, no need to test again.
+                        // So, when j goes beyond the end (len-1), we know there is no solution.
+                        return -1;
+                    }
+                    else if (idx > i)
+                    {
+                        // Important idea : If we cannot go from i to j (j < len), then we know that we can't
+                        // go from i+1 to j. So, we can choose the next starting point wisely.
+                        // We could start j.
+                        i = idx - 1;
+                    }
+                    break;
+                }
+            }
+
+            if (reachable)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    //-----------------------------------------------------------------------------
+    // 560. Subarray Sum Equals K (Medium)
+    //-----------------------------------------------------------------------------
+    int subarraySum(const vector<int>& nums, int k)
+    {
+        // Use a hash table to store the prefix sum and its number of occurrence.
+        // The same prefix sum may occur multiple times.
+        // For example:
+        // 1 0 1 -1 -1 1 ...
+        // 0 1 2  1  0 1
+        unordered_map<int, size_t> prefixSim2Count;
+        int sum = 0;
+        // If the first number is the same as k, count it.
+        int result = nums[0] == k ? 1 : 0;
+        // Consider the subarray starts from 0 index.
+        prefixSim2Count[0] = 1;
+        for (int i = 0; i < nums.size(); ++i)
+        {
+            sum += nums[i];
+            const int diff = sum - k;
+            if (prefixSim2Count.count(diff) > 0)
+            {
+                result += prefixSim2Count[diff];
+            }
+            prefixSim2Count[sum]++;
+        }
+
+        return result;
+    }
 
     //-----------------------------------------------------------------------------
     // Test function
@@ -1173,5 +1253,17 @@ namespace ArrayAndString
         cout << "\n239. Sliding Window Maximum: " << endl;
         resultVI = maxSlidingWindow({ -7, -8, 7, 5, 7, 1, 6, 0 }, 4);
         LeetCodeUtil::PrintVector(resultVI);
+
+        // 134. Gas Station (Medium)
+        // Input: gas = [1,2,3,4,5], cost = [3,4,5,1,2]
+        // Output: 3
+        // Input: gas = [2,3,4], cost = [3,4,3]
+        // Output: -1
+        cout << "\n134. Gas Station: " << canCompleteCircuit({ 2,3,4 }, { 3,4,3 }) << endl;
+
+        // 560. Subarray Sum Equals K (Medium)
+        // Input: nums = [1, 2, 3], k = 3
+        // Output : 2
+        cout << "\n560. Subarray Sum Equals K: " << subarraySum({ 1, 2, 3 }, 3) << endl;
     }
 }

@@ -8,6 +8,7 @@
 #include <set>
 #include <unordered_set>
 #include <string_view> // C++17
+#include <queue>
 
 namespace SortingAndSearching
 {
@@ -298,8 +299,74 @@ namespace SortingAndSearching
     };
 
     //-----------------------------------------------------------------------------
-    // 1648. Sell Diminishing-Valued Colored Balls (Medium)
+    // 1648. Sell Diminishing-Valued Colored Balls (Medium-Hard)
+    // Topic: Greedy, Math, Binary search, Priority queue.
     //-----------------------------------------------------------------------------
+    class Solution1648
+    {
+    public:
+        int maxProfit(vector<int>& inventory, int orders)
+        {
+            // Pick the balls whose the count is max.
+            // O O O  <--| Step 1. Sell (5+4) * 3 = 27
+            // O O O  <--|
+            // O O O O    <--| Step 2. Sell (3+2) * 4 = 20
+            // O O O O    <--|
+            // O O O O O      <-- Step 3. Sell 1 * 5 = 5
+
+            // Sort in descending order. Takes O(nlog(n))
+            std::sort(inventory.begin(), inventory.end(), std::greater<int>());
+
+            long long valueCurrent = inventory[0];
+            size_t indexNextLevel = 0;
+
+            const int modulo = static_cast<int>(1e9 + 7);
+            long long result = 0;
+            size_t len = inventory.size();
+
+            // Until we complete all orders (in number of the balls)
+            while (orders > 0)
+            {
+                while (indexNextLevel < len && inventory[indexNextLevel] == valueCurrent)
+                {
+                    indexNextLevel++;
+                }
+
+                long long valueNextLevel = indexNextLevel == len ? 0 : inventory[indexNextLevel];
+                size_t height = valueCurrent - valueNextLevel;
+
+                // We now should take all balls in the rectangle (width * height), but we must
+                // consider the case that the orders might be smaller.
+                long long maxCountToTake = indexNextLevel * height;
+                long long remainder = 0;
+                if (orders < maxCountToTake)
+                {
+                    // Adjust the height and set the remainder.
+                    height = orders / indexNextLevel;
+                    remainder = orders % indexNextLevel;
+                }
+
+                // Apply Trapezoidal rule. Assume we need to take Q.
+                // Q Q -> 5
+                // Q Q -> 4
+                // Q O -> 3
+                // O O O
+                // O O O O
+                long long valueBottm = valueCurrent - height + 1; // 5 - 2 + 1 = 4.
+                // indexNextLevel is the width.
+                long long sum = indexNextLevel * ( valueBottm + valueCurrent ) * height / 2;
+                // Consider the remainder.
+                sum += remainder * ( valueBottm - 1 );
+
+                result = ( result + sum ) % modulo;
+
+                orders -= min(static_cast<long long>(orders), maxCountToTake);
+                valueCurrent = valueNextLevel;
+            }
+
+            return static_cast<int>(result);
+        }
+    };
 
     //-----------------------------------------------------------------------------
     // 2055. Plates Between Candles (Medium)
@@ -349,6 +416,91 @@ namespace SortingAndSearching
         }
 
         return result;
+    }
+
+    //-----------------------------------------------------------------------------
+    // 2268. Minimum Number of Keypresses (Medium)
+    //-----------------------------------------------------------------------------
+    class Solution2268
+    {
+    public:
+        int minimumKeypresses(const string& s)
+        {
+            unordered_map<char, int> charCount;
+            for (const auto& c : s)
+            {
+                charCount[c]++;
+            }
+
+            priority_queue<pair<int, char>> pQueue;
+            for (const auto& p : charCount)
+            {
+                pQueue.emplace(p.second, p.first);
+            }
+            charCount.clear();
+
+            int letterCount = 0;
+            int result = 0;
+            // The position of the letter on button. For example, in 'abc' b's pos is 2.
+            int pos = 1;
+            while (!pQueue.empty())
+            {
+                int countInStr = pQueue.top().first;
+                pQueue.pop();
+
+                result += pos * countInStr;
+
+                letterCount++;
+
+                if (letterCount >= 9)
+                {
+                    pos++;
+                    letterCount = 0;
+                }
+            }
+
+            return result;
+        }
+    };
+
+    //-----------------------------------------------------------------------------
+    // 540. Single Element in a Sorted Array (Medium)
+    //-----------------------------------------------------------------------------
+    int singleNonDuplicate(const vector<int>& nums)
+    {
+        // Index:  0 1 2   3 4 5 6 7 8
+        //         1,1,2,  3,3,4,4,8,8  If we add the missing number back.
+        //         1,1,2,2,3,3,4,4,8,8
+        //         0 1 2 3 4 5 6 7 8 9
+        //                 ^ The index of the larger numbers (>3) will change.
+
+        // Each number has it paired number.
+        // For number at even index, its pair number is supposed to be in index +1.
+        // For number at odd index, its pair number is supposed to be in index - 1.
+        // If it is not true, the missing number must be in its left side.
+
+        size_t left = 0;
+        size_t right = nums.size() - 1;
+
+        // A easy case: 1 1 2
+        while (left < right)
+        {
+            const size_t mid = left + ( right - left ) / 2;
+            const size_t pairIdx = ( mid & 0b1 ) == 0 ? mid + 1 : mid - 1;
+            if (nums[mid] == nums[pairIdx])
+            {
+                left = mid + 1;
+            }
+            else
+            {
+                // 1 2 2
+                //   ^
+                right = mid;
+            }
+
+        }
+
+        return nums[left];
     }
 
 
@@ -458,5 +610,28 @@ namespace SortingAndSearching
         auto resultVI = platesBetweenCandles("***", inputMatrix);
         cout << "\n2055. Plates Between Candles: " << endl;
         LeetCodeUtil::PrintVector(resultVI);
+
+        // 2268. Minimum Number of Keypresses (Medium)
+        // Input: s = "apple"
+        // Output : 5
+        // Input: s = "abcdefghijkl"
+        // Output: 15
+        Solution2268 sol2268;
+        cout << "\n2268. Minimum Number of Keypresses: " << sol2268.minimumKeypresses("abcdefghijkl") << endl;
+
+        // 540. Single Element in a Sorted Array
+        // Input: nums = [1,1,2,3,3,4,4,8,8]
+        // Output: 2
+        cout << "\n540. Single Element in a Sorted Array: " << singleNonDuplicate({ 1,1,2,3,3,4,4,8,8 }) << endl;
+
+        // 1648. Sell Diminishing-Valued Colored Balls (Medium-Hard)
+        // Input: inventory = [2, 5], orders = 4
+        // Output : 14
+        // [1000000000], 1000000000, expect: 21
+        // [1000000000,1000000000,1000000000], 1000000000, expect: 37
+        Solution1648 sol1648;
+        inputVI = { 1000000000,1000000000,1000000000 };
+        int orders = 1000000000;
+        cout << "\n1648. Sell Diminishing-Valued Colored Balls: " << sol1648.maxProfit(inputVI, orders) << endl;
     }
 }

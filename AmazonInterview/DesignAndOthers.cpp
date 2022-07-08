@@ -382,25 +382,13 @@ namespace DesignAndOthers
     class Solution772
     {
     public:
-
-        struct Node
-        {
-            bool isOperand = false;
-            char operand;
-            int value = 0;
-
-            Node(bool isOp, char op, int val)
-                : isOperand(isOp), operand(op), value(val)
-            {}
-        };
-
         int calculate(const string& s)
         {
             // Idea: Use recursion for (XXXX) first.
             // For a string without (), like "2+2x4", we should process '*' and '/'
             // first, then process '+', '-'. Return the value in the end.
             int temp = -1;
-            deque<Node> elements;
+            vector<Node> elements;
             for (int i = 0; i < s.size(); ++i)
             {
                 if (s[i] != '(')
@@ -410,11 +398,11 @@ namespace DesignAndOthers
                         if (temp != -1)
                         {
                             // A operand may follow a pair of (xxx). In that case, temp will be
-                            // 0, we must not add it.
-                            elements.emplace_back(false, ' ', temp);
+                            // -1, we must not add it.
+                            elements.emplace_back(false, temp);
                         }
-                        elements.emplace_back(true, s[i], 0);
-                        temp = 0;
+                        elements.emplace_back(true, s[i]);
+                        temp = -1;
                     }
                     else
                     {
@@ -440,63 +428,177 @@ namespace DesignAndOthers
                     // 1 * ( 2 + 3 )
                     //     ^       ^
                     //     2       6
-                    string sub = s.substr(i + 1, j - i - 1);
+                    const string sub = s.substr(i + 1, j - i - 1);
                     int val = calculate(sub);
-                    elements.emplace_back(false, ' ', val);
+                    elements.emplace_back(false, val);
 
                     i = j;
                 }
             }
             if (temp != -1)
             {
-                elements.emplace_back(false, ' ', temp);
+                elements.emplace_back(false, temp);
             }
 
-            elements = processOperator(elements, '*', '/');
-            elements = processOperator(elements, '+', '-');
+            if (elements.size() > 1)
+            {
+                processOperator(elements, '*', '/');
+                if (elements.size() > 1)
+                {
+                    processOperator(elements, '+', '-');
+                }
+            }
 
-            return elements.front().value;
+            return elements.back().value;
         }
 
     private:
-        deque<Node> processOperator(const deque<Node>& nodes, char op1, char op2)
+
+        struct Node
         {
-            deque<Node> result;
+            bool isOperand = false;
+            int value = 0;
+
+            Node(bool isOp, int val)
+                : isOperand(isOp), value(val)
+            {}
+        };
+
+        void processOperator(vector<Node>& nodes, char op1, char op2)
+        {
+            vector<Node> result;
             for (int i = 0; i < nodes.size(); ++i)
             {
-                // deque: 1 * 2 + 3 => deque:  2  +  3
-                const char op = nodes[i].operand;
-                if (op == op1 || op == op2)
+                const auto& node = nodes[i];
+                if (node.isOperand &&
+                    (static_cast<char>( node.value ) == op1 || static_cast<char>( node.value ) == op2))
                 {
-                    int left = result.back().value;
-                    result.pop_back();
+                    const char op = static_cast<char>( node.value );
+                    const int left = result.back().value;
 
                     if (op == '+')
                     {
-                        result.emplace_back(false, ' ', left + nodes[i + 1].value);
+                        result.rbegin()->value = left + nodes[i + 1].value;
                     }
                     else if (op == '-')
                     {
-                        result.emplace_back(false, ' ', left - nodes[i + 1].value);
+                        result.rbegin()->value = left - nodes[i + 1].value;
                     }
                     else if (op == '*')
                     {
-                        result.emplace_back(false, ' ', left * nodes[i + 1].value);
+                        result.rbegin()->value = left * nodes[i + 1].value;
                     }
                     else
                     {
-                        result.emplace_back(false, ' ', left / nodes[i + 1].value);
+                        result.rbegin()->value = left / nodes[i + 1].value;
                     }
+
                     i++;
                 }
                 else
                 {
-                    result.push_back(nodes[i]);
+                    result.push_back(node);
                 }
             }
-            return result;
+
+            result.swap(nodes);
         }
     };
+
+    //-----------------------------------------------------------------------------
+    // 227. Basic Calculator II (Medium)
+    //
+    // Unlike "772. Basic Calculator III", there is no parentheses in the string.
+    //-----------------------------------------------------------------------------
+    class Solution227
+    {
+    public:
+        int calculate(string s)
+        {
+            const size_t len = s.size();
+
+            int temp = -1;
+            vector<Node> elements;
+            for (int i = 0; i < len; ++i)
+            {
+                if (s[i] == ' ')
+                {
+                    continue;
+                }
+                if (!isdigit(s[i]))
+                {
+                    elements.emplace_back(false, temp);
+                    elements.emplace_back(true, s[i]);
+                    temp = -1;
+                }
+                else
+                {
+                    temp = temp == -1 ? s[i] - '0' : temp * 10 + ( s[i] - '0' );
+                }
+            }
+            if (temp != -1)
+            {
+                elements.emplace_back(false, temp);
+            }
+
+            processOperator(elements, '*', '/');
+            processOperator(elements, '+', '-');
+
+            return elements.back().value;
+        }
+
+    private:
+        struct Node
+        {
+            bool isOperand = false;
+            int value = 0;
+
+            Node(bool isOp, int val)
+                : isOperand(isOp), value(val)
+            {}
+        };
+
+        void processOperator(vector<Node>& nodes, char op1, char op2)
+        {
+            vector<Node> result;
+            for (int i = 0; i < nodes.size(); ++i)
+            {
+                const auto& node = nodes[i];
+                if (node.isOperand &&
+                    (static_cast<char>( node.value ) == op1 || static_cast<char>( node.value ) == op2))
+                {
+                    const char op = static_cast<char>( node.value );
+                    const int left = result.back().value;
+
+                    if (op == '+')
+                    {
+                        result.rbegin()->value = left + nodes[i + 1].value;
+                    }
+                    else if (op == '-')
+                    {
+                        result.rbegin()->value = left - nodes[i + 1].value;
+                    }
+                    else if (op == '*')
+                    {
+                        result.rbegin()->value = left * nodes[i + 1].value;
+                    }
+                    else
+                    {
+                        result.rbegin()->value = left / nodes[i + 1].value;
+                    }
+
+                    i++;
+                }
+                else
+                {
+                    result.push_back(node);
+                }
+            }
+
+            result.swap(nodes);
+        }
+    };
+
 
     //-----------------------------------------------------------------------------
     // Test function
@@ -567,6 +669,12 @@ namespace DesignAndOthers
         // Input: s = "2*(5+5*2)/3+(6/2+8)"
         // Output: 21
         Solution772 sol772;
-        cout << "\n772. Basic Calculator III: " << sol772.calculate("0") << endl;
+        cout << "\n772. Basic Calculator III: " << sol772.calculate("(9568+(9040-(380+(2042-(7115)+(6294)-(4395-(5183+9744+(7746-(1099+2718))-(9370-(8561+(9302)-(7632+(8451-(1759+(7760))-(3377+5363+9093+(8332-(4492-(1151+(1165-8833+(775+(3749)+9399))+9112+(6273+(7285-(6112-(668-(7756-4316-(582+1835-(6644+690+1204-(7197+(7897))+(7009-(7262))-7782-(7858+(7644+(9461+(2224)-(7531-1095-(891+1022)+2197-(9855)))+(6663-(7417-(6158-(3610))+(1481))-(4182+(4761)))+(5017))+(9990)+(6218)))-(2904)+(5631)-(8888)+3401+(3569))+(1135))-(3695-(7713+(3479)-(9813+(8171+(8616-8026+(4634-(6973))-(9761-(623-4782)+(2514)+(6233)))))+(6140))-(6641)-8611+(8389)+8074-(4412))-(3703)+(9688+(9513))))-(4987)))+(9647)))))))))-(2299))-(4785))))))") << endl;
+
+        // 227. Basic Calculator II (Medium)
+        // Input: s = "3+2*2"
+        // Output: 7
+        Solution227 sol227;
+        cout << "\n227. Basic Calculator II: " << sol227.calculate("3+2*2") << endl;
     }
 }
