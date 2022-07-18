@@ -599,6 +599,44 @@ namespace DesignAndOthers
         }
     };
 
+    //-----------------------------------------------------------------------------
+    // 1166. Design File System (Medium)
+    //-----------------------------------------------------------------------------
+    class FileSystem
+    {
+    public:
+        FileSystem()
+        {
+        }
+
+        bool createPath(string path, int value)
+        {
+            // Extract parent.
+            string parent = path.substr(0, path.rfind('/'));
+            // Return false if parent doesn't exist.
+            if (!parent.empty() && path2Value.count(parent) == 0)
+            {
+                return false;
+            }
+
+            auto res = path2Value.emplace(path, value);
+            return res.second;
+        }
+
+        int get(string path)
+        {
+            auto it = path2Value.find(path);
+            if (it == path2Value.end())
+            {
+                return -1;
+            }
+            return it->second;
+        }
+
+    private:
+        unordered_map<string, int> path2Value;
+    };
+
 
     //-----------------------------------------------------------------------------
     // Test function

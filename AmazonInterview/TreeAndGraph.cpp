@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <queue>
+#include <set>
+#include <map>
 
 namespace TreeAndGraph
 {
@@ -674,6 +676,99 @@ namespace TreeAndGraph
     };
 
     //-----------------------------------------------------------------------------
+    // 694. Number of Distinct Islands (Medium)
+    //-----------------------------------------------------------------------------
+    class Solution694
+    {
+    public:
+        int numDistinctIslands(vector<vector<int>>& grid)
+        {
+            // The crucial part of this question is how to distinguish islands.
+            // Luckily, std::vector can be stored in std::set and std::set is able
+            // to distinguish and sort them pretty well.
+            // So, we can regard the top-left cell as the root point and save root
+            // point and all relative point of an island into a vector.
+            // And then push this vector into a set.
+            // The number of the elements in the set is the answer.
+            set<vector<pair<int, int>>> islandSet;
+
+            height = grid.size();
+            width = grid[0].size();
+
+            for (int i = 0; i < height; i++)
+            {
+                for (int j = 0; j < width; j++)
+                {
+                    if (grid[i][j] != 1)
+                    {
+                        continue;
+                    }
+
+                    vector<pair<int, int>> island;
+                    dfsHelper(grid, i, j, i, j, island);
+
+                    // The set will not insert if it is already in the set.
+                    islandSet.insert(island);
+                }
+            }
+
+            return islandSet.size();
+        }
+
+    private:
+        void dfsHelper(vector<vector<int>>& grid, int x, int y, int rootX, int rootY, vector<pair<int, int>>& island)
+        {
+            // Mark -1 as visited.
+            grid[x][y] = -1;
+            island.emplace_back(x - rootX, y - rootY);
+
+            for (const auto& dir : dirs)
+            {
+                int newX = x + dir.first;
+                int newY = y + dir.second;
+                if (newX < 0 || newX >= height || newY < 0 || newY >= width || grid[newX][newY] != 1)
+                {
+                    continue;
+                }
+                dfsHelper(grid, newX, newY, rootX, rootY, island);
+            }
+        }
+
+    private:
+
+        const vector<pair<int, int>> dirs{ {0,-1},{-1,0},{0,1},{1,0} };
+
+        size_t height = 0;
+        size_t width = 0;
+    };
+
+    //-----------------------------------------------------------------------------
+    // 1557. Minimum Number of Vertices to Reach All Nodes (Medium)
+    //-----------------------------------------------------------------------------
+    vector<int> findSmallestSetOfVertices(int n, vector<vector<int>>& edges)
+    {
+        vector<int> inDegree(n, 0);
+
+        for (const auto& edge : edges)
+        {
+            inDegree[edge[1]]++;
+        }
+
+        vector<int> result;
+        for (int i = 0; i < n; ++i)
+        {
+            if (inDegree[i] == 0)
+            {
+                result.push_back(i);
+            }
+        }
+
+        return result;
+    }
+
+
+
+    //-----------------------------------------------------------------------------
     // Test function.
     //-----------------------------------------------------------------------------
     void TestTreeAndGraph()
@@ -771,5 +866,20 @@ namespace TreeAndGraph
         Solution909 sol909;
         cout << "\n909. Snakes and Ladders: " << sol909.snakesAndLadders(inputVVI) << endl;
 
+        // 694. Number of Distinct Islands (Medium)
+        // Input: grid = [[1,1,0,0,0],[1,1,0,0,0],[0,0,0,1,1],[0,0,0,1,1]]
+        // Output: 1
+        inputStr = "[[0,0,1,0,1,0,1,1,1,0,0,0,0,1,0,0,1,0,0,1,1,1,0,1,1,1,0,0,0,1,1,0,1,1,0,1,0,1,0,1,0,0,0,0,0,1,1,1,1,0],[0,0,1,0,0,1,1,1,0,0,1,0,1,0,0,1,1,0,0,1,0,0,0,1,0,1,1,1,0,0,0,0,0,0,0,1,1,1,0,0,0,1,0,1,1,0,1,0,0,0],[0,1,0,1,0,1,1,1,0,0,1,1,0,0,0,0,1,0,1,0,1,1,1,0,1,1,1,0,0,0,1,0,1,0,1,0,0,0,1,1,1,1,1,0,0,1,0,0,1,0],[1,0,1,0,0,1,0,1,0,0,1,0,0,1,1,1,0,1,0,0,0,0,1,0,1,0,0,1,0,1,1,1,0,1,0,0,0,1,1,1,0,0,0,0,1,1,1,1,1,1]]";
+        LeetCodeUtil::BuildIntMatrixFromString(inputStr, &inputVVI);
+        Solution694 sol694;
+        cout << "\n694. Number of Distinct Islands: " << sol694.numDistinctIslands(inputVVI) << endl;
+
+        // 1557. Minimum Number of Vertices to Reach All Nodes (Medium)
+        // Input: n = 6, edges = [[0,1],[0,2],[2,5],[3,4],[4,2]]
+        // Output: [0, 3]
+        LeetCodeUtil::BuildIntMatrixFromString("[[0,1],[0,2],[2,5],[3,4],[4,2]]", &inputVVI);
+        resultVI = findSmallestSetOfVertices(6, inputVVI);
+        cout << "\n1557. Minimum Number of Vertices to Reach All Nodes: " << endl;
+        PrintVector(resultVI);
     }
 }
