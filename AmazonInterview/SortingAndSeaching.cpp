@@ -9,6 +9,7 @@
 #include <unordered_set>
 #include <string_view> // C++17
 #include <queue>
+#include <numeric>
 
 namespace SortingAndSearching
 {
@@ -626,6 +627,78 @@ namespace SortingAndSearching
     }
 
     //-----------------------------------------------------------------------------
+    // 2163. Minimum Difference in Sums After Removal of Elements (Hard)
+    //-----------------------------------------------------------------------------
+    long long minimumDifference(const vector<int>& nums)
+    {
+        // We want the first part to be minimum, meaning removing largest numbers.
+        // Similarly, we want the second part to be maximum, meaning removing the
+        // smallest numbers.
+        const int n = nums.size() / 3;
+        // Initialize with the first 3 numbers.
+        priority_queue<int> maxHeap(nums.begin(), nums.begin() + n);
+        // Initialize with the last 3 numbers.
+        priority_queue<int, vector<int>, greater<>> minHeap(nums.begin() + 2 * n, nums.end());
+
+        // Now we need a vector to denote the possible minimum value of the sum of
+        // the 1st part.
+        // Consider:
+        //
+        // [7,9,5,8,1,3]
+        // [^ ^ ] min sum = 16. Consider i = 0~1
+        // min[0] = 16
+        // [7,9,5,8,1,3]
+        // [^   ^ ] min sum = 12. Consider i = 0~2
+        // min[1] = 12
+        // [7,9,5,8,1,3]
+        // [^   ^   ] min sum = 12. Consider i = 0~3
+        // min[2] = 12
+        // n = 2, min's size is n + 1 = 3.
+
+        // Similarly, we need a max vector to denote the possible maximum value of the sum of
+        // the 2nd part.
+        // Consider min[2] = 12. i = 0~3. It means we reserve 0~3 for the 1st part.
+        // The 2nd part has no choice but to use i = 4~5. Its sum is 4.
+        // So, the difference must be calculated on the same index, i.e.
+        // diff[2] = min[2] - max[2].
+        // The final answer would be the minimum among the diff[], i.e. min(diff[0 ~ n+1]).
+
+        // To optimize the space usage, we can just one vector instead of 3 vectors.
+        vector<long long> diff(n + 1);
+        long long sumMin = std::accumulate(nums.begin(), nums.begin() + n, 0LL);
+        diff[0] = sumMin;
+
+        // Scan for the 1st part.
+        for (int i = n; i < 2 * n; ++i)
+        {
+            if (maxHeap.top() > nums[i])
+            {
+                sumMin += nums[i] - maxHeap.top();
+                maxHeap.pop();
+                maxHeap.push(nums[i]);
+            }
+            diff[i - n + 1] = sumMin;
+        }
+
+        long long sumMax = std::accumulate(nums.begin() + 2 * n, nums.end(), 0LL);
+        diff[n] -= sumMax;
+        // Scan backward for the 2nd part.
+        for (int i = 2 * n - 1; i > n - 1; --i)
+        {
+            if (minHeap.top() < nums[i])
+            {
+                sumMax += nums[i] - minHeap.top();
+                minHeap.pop();
+                minHeap.push(nums[i]);
+            }
+            diff[i - n] -= sumMax;
+        }
+
+        return *min_element(diff.begin(), diff.end());
+    }
+
+
+    //-----------------------------------------------------------------------------
     // Test function.
     //-----------------------------------------------------------------------------
     void TestSortingAndSearching()
@@ -771,5 +844,10 @@ namespace SortingAndSearching
         resultVI = smallestRange(inputMatrix);
         cout << "\n632. Smallest Range Covering Elements from K Lists: " << endl;
         PrintVector(resultVI);
+
+        // 2163. Minimum Difference in Sums After Removal of Elements (Hard)
+        // Input: nums = [7,9,5,8,1,3]
+        // Output: 1
+        cout << "\n2163. Minimum Difference in Sums After Removal of Elements: " << minimumDifference({ 7,9,5,8,1,3 }) << endl;
     }
 }

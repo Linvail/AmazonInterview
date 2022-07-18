@@ -1109,6 +1109,67 @@ namespace ArrayAndString
     }
 
     //-----------------------------------------------------------------------------
+    // 2221. Find Triangular Sum of an Array (Medium)
+    //-----------------------------------------------------------------------------
+    int triangularSum(vector<int>& nums)
+    {
+        int len = nums.size();
+        while (len > 1)
+        {
+            for (size_t i = 0; i < len - 1; ++i)
+            {
+                nums[i] = ( nums[i] + nums[i + 1] ) % 10;
+            }
+
+            len--;
+        }
+
+        return nums.front();
+    }
+
+    //-----------------------------------------------------------------------------
+    // 135. Candy (Hard)
+    // Topic: Greedy
+    //-----------------------------------------------------------------------------
+    int candy(const vector<int>& ratings)
+    {
+        // The following implementation shows the solution having O(n) space complexity.
+        // There is a solution having O(1) space complexity but it is not easy.
+        const size_t len = ratings.size();
+        // If there is just one child, we just need 1 candy.
+        if (len == 1) return 1;
+
+        // Every child at least has 1 candy.
+        vector<int> candies(len, 1);
+
+        // Scan from left to right to make sure the current child has more candy
+        // if the current one has higher rating than its left neighbor.
+        for (int i = 1; i < len; ++i)
+        {
+            if (ratings[i] > ratings[i - 1])
+            {
+                candies[i] = candies[i - 1] + 1;
+            }
+        }
+
+        // Scan from right to left to make sure the current child has more candy
+        // if the current on has higher rating than its right neighbor.
+        for (int i = len - 2; i >= 0; i--)
+        {
+            if (ratings[i] > ratings[i + 1])
+            {
+                // We want child[i] to have more than child[i] and also child[i-1].
+                // We cannot simply use candies[i + 1] + 1 because we don't know the
+                // relationship between candies[i] and candies[i + 1] + 1.
+                // Maybe candies[i] is already larger than candies[i + 1] + 1.
+                candies[i] = max(candies[i], candies[i + 1] + 1);
+            }
+        }
+
+        return std::accumulate(candies.begin(), candies.end(), 0);
+    }
+
+    //-----------------------------------------------------------------------------
     // Test function
     //-----------------------------------------------------------------------------
     void TestArrayAndString()
@@ -1265,5 +1326,14 @@ namespace ArrayAndString
         // Input: nums = [1, 2, 3], k = 3
         // Output : 2
         cout << "\n560. Subarray Sum Equals K: " << subarraySum({ 1, 2, 3 }, 3) << endl;
+
+        // 2221. Find Triangular Sum of an Array (Medium)
+        inputVI = { 1,2,3,4,5 };
+        cout << "\n2221. Find Triangular Sum of an Array: " << triangularSum(inputVI) << endl;
+
+        // 135. Candy (Hard)
+        // Input: ratings = [1,2,2]
+        // Output: 4
+        cout << "\n135. Candy: " << candy({ 1,2,2 }) << endl;
     }
 }
