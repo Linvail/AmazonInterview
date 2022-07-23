@@ -697,6 +697,29 @@ namespace SortingAndSearching
         return *min_element(diff.begin(), diff.end());
     }
 
+    //-----------------------------------------------------------------------------
+    // 1010. Pairs of Songs With Total Durations Divisible by 60 (Medium)
+    //-----------------------------------------------------------------------------
+    int numPairsDivisibleBy60(const vector<int>& time)
+    {
+        unordered_map<int, size_t> remainderMap;
+        int result = 0;
+        for (const auto& t : time)
+        {
+            int remainder = t % 60;
+            if (remainder == 0)
+            {
+                result += remainderMap[0];
+            }
+            else if (remainderMap.count(60 - remainder))
+            {
+                result += remainderMap[60 - remainder];
+            }
+            remainderMap[remainder]++;
+        }
+
+        return result;
+    }
 
     //-----------------------------------------------------------------------------
     // Test function.
@@ -849,5 +872,10 @@ namespace SortingAndSearching
         // Input: nums = [7,9,5,8,1,3]
         // Output: 1
         cout << "\n2163. Minimum Difference in Sums After Removal of Elements: " << minimumDifference({ 7,9,5,8,1,3 }) << endl;
+
+        // 1010. Pairs of Songs With Total Durations Divisible by 60 (Medium)
+        // Input: time = [30, 20, 150, 100, 40]
+        // Output : 3
+        cout << "\n1010. Pairs of Songs With Total Durations Divisible by 60: " << numPairsDivisibleBy60({ 30, 20, 150, 100, 40 }) << endl;
     }
 }

@@ -476,8 +476,8 @@ namespace TreeAndGraph
             while (!unprocessed.empty())
             {
                 steps++;
-                const int count = unprocessed.size();
-                for (int i = 0; i < count; ++i)
+                const size_t count = unprocessed.size();
+                for (size_t i = 0; i < count; ++i)
                 {
                     const int x = unprocessed.front().first;
                     const int y = unprocessed.front().second;
@@ -529,8 +529,8 @@ namespace TreeAndGraph
 
             while (!nodeQueue.empty())
             {
-                const int count = nodeQueue.size();
-                for (int i = 0; i < count; ++i)
+                const size_t count = nodeQueue.size();
+                for (size_t i = 0; i < count; ++i)
                 {
                     TreeNode* curr = nodeQueue.front();
                     nodeQueue.pop();
@@ -626,8 +626,8 @@ namespace TreeAndGraph
 
             while (!unprocessed.empty())
             {
-                const int len = unprocessed.size();
-                for (int i = 0; i < len; ++i)
+                const size_t len = unprocessed.size();
+                for (size_t i = 0; i < len; ++i)
                 {
                     const int num = unprocessed.front();
                     unprocessed.pop();
@@ -665,14 +665,14 @@ namespace TreeAndGraph
         // we can fetch the number at that coordinate (x, y).
         int getValueForNumber(const vector<vector<int>>& board, int number)
         {
-            const int zeroBasedN = n - 1;
-            int x = zeroBasedN - ( number - 1 ) / n;
-            int y = ( (zeroBasedN - x) % 2 == 0 ) ? ( number - 1 ) % n : zeroBasedN - ( ( number - 1 ) % n );
+            const size_t zeroBasedN = n - 1;
+            size_t x = zeroBasedN - ( number - 1 ) / n;
+            size_t y = ( (zeroBasedN - x) % 2 == 0 ) ? ( number - 1 ) % n : zeroBasedN - ( ( number - 1 ) % n );
 
             return board[x][y];
         }
 
-        int n = 0;
+        size_t n = 0;
     };
 
     //-----------------------------------------------------------------------------
@@ -712,7 +712,7 @@ namespace TreeAndGraph
                 }
             }
 
-            return islandSet.size();
+            return static_cast<int>(islandSet.size());
         }
 
     private:
@@ -766,6 +766,72 @@ namespace TreeAndGraph
         return result;
     }
 
+    //-----------------------------------------------------------------------------
+    // 1091. Shortest Path in Binary Matrix (Medium)
+    //-----------------------------------------------------------------------------
+    class Solution1091
+    {
+    public:
+        int shortestPathBinaryMatrix(vector<vector<int>>& grid)
+        {
+            // Constraint: 1 <= n <= 100
+            const size_t n = grid.size();
+            if (n < 1 || grid[0][0] != 0)
+            {
+                return -1;
+            }
+
+            struct intPairHash
+            {
+                unsigned long long operator()(const pair<int, int>& p) const
+                {
+                    return ( static_cast<unsigned long long>( p.first ) << 32 ) | static_cast<unsigned long long>( p.second );
+                }
+            };
+
+            // Use BFS to find the shortest path.
+            unordered_set<pair<int, int>, intPairHash> visited;
+            deque<pair<int, int>> unprocessed;
+            // Put starting point.
+            unprocessed.emplace_back(0, 0);
+
+            vector<pair<int, int>> dirs = { {1, 0}, {0, 1}, {-1, 0}, {0, -1}, {1, -1}, {-1, 1}, {1, 1}, {-1, -1} };
+
+            int steps = 1;
+            while (!unprocessed.empty())
+            {
+                const size_t count = unprocessed.size();
+                for (size_t i = 0; i < count; ++i)
+                {
+                    pair<int, int> p = unprocessed.front();
+                    unprocessed.pop_front();
+                    if (p.first == n - 1 && p.second == n - 1)
+                    {
+                        // Reach!
+                        return steps;
+                    }
+
+                    for (size_t j = 0; j < dirs.size(); ++j)
+                    {
+                        const int newX = p.first + dirs[j].first;
+                        const int newY = p.second + dirs[j].second;
+
+                        if (newX < 0 || newX >= n || newY < 0 || newY >= n ||
+                            grid[newX][newY] != 0 || visited.count({ newX, newY }) > 0)
+                        {
+                            continue;
+                        }
+
+                        visited.emplace(newX, newY);
+                        unprocessed.emplace_back(newX, newY);
+                    }
+                }
+                steps++;
+            }
+
+            return -1;
+        }
+    };
 
 
     //-----------------------------------------------------------------------------
@@ -881,5 +947,13 @@ namespace TreeAndGraph
         resultVI = findSmallestSetOfVertices(6, inputVVI);
         cout << "\n1557. Minimum Number of Vertices to Reach All Nodes: " << endl;
         PrintVector(resultVI);
+
+        // 1091. Shortest Path in Binary Matrix (Medium)
+        // Input: grid = [[0,1],[1,0]]
+        // Output: 2
+        Solution1091 sol1091;
+        inputStr = "[[0,1],[1,0]]";
+        LeetCodeUtil::BuildIntMatrixFromString(inputStr, &inputVVI);
+        cout << "\n1091. Shortest Path in Binary Matrix: " << sol1091.shortestPathBinaryMatrix(inputVVI) << endl;
     }
 }

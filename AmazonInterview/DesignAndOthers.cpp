@@ -637,6 +637,77 @@ namespace DesignAndOthers
         unordered_map<string, int> path2Value;
     };
 
+    //-----------------------------------------------------------------------------
+    // 353. Design Snake Game (Medium)
+    //-----------------------------------------------------------------------------
+    class SnakeGame
+    {
+    public:
+        SnakeGame(int width, int height, const vector<vector<int>>& food)
+            : m_snakeBody()
+            , m_Food(food.begin(), food.end())
+            , m_height(height)
+            , m_width(width)
+        {
+            m_snakeBody.emplace_back(0, 0);
+        }
+
+        int move(string direction)
+        {
+            pair<int, int> dir;
+            if (direction == "R")
+            {
+                dir = { 0, 1 };
+            }
+            else if (direction == "L")
+            {
+                dir = { 0, -1 };
+            }
+            else if (direction == "D")
+            {
+                dir = { 1, 0 };
+            }
+            else
+            {
+                dir = { -1, 0 };
+            }
+
+            const int newX = m_snakeBody.back().first + dir.first;
+            const int newY = m_snakeBody.back().second + dir.second;
+            // Start from begin() + 1 because we want to exclude the tail.
+            bool touch = std::find(m_snakeBody.begin() + 1, m_snakeBody.end(), make_pair(newX, newY)) != m_snakeBody.end();
+
+            if (newX < 0 || newX >= m_height ||
+                newY < 0 || newY >= m_width || touch)
+            {
+                return -1;
+            }
+
+            if (m_Food.empty() || m_Food.begin()->at(0) != newX || m_Food.begin()->at(1) != newY)
+            {
+                // No food here. Remove the tail.
+                m_snakeBody.erase(m_snakeBody.begin());
+            }
+            else
+            {
+                // A food got eaten. Remove it.
+                m_Food.erase(m_Food.begin());
+            }
+
+            // Add new head.
+            m_snakeBody.emplace_back(newX, newY);
+
+            return m_snakeBody.size() - 1;
+        }
+
+    private:
+        // Record snake's body.
+        deque<pair<int, int>> m_snakeBody;
+        deque<vector<int>> m_Food;
+
+        int m_height;
+        int m_width;
+    };
 
     //-----------------------------------------------------------------------------
     // Test function
@@ -714,5 +785,24 @@ namespace DesignAndOthers
         // Output: 7
         Solution227 sol227;
         cout << "\n227. Basic Calculator II: " << sol227.calculate("3+2*2") << endl;
+
+        // 353. Design Snake Game (Medium)
+        // ["SnakeGame","move","move","move","move","move","move","move","move","move","move","move","move"]
+        // [[3, 3, [[2, 0], [0, 0], [0, 2], [2, 2]] ], ["D"], ["D"], ["R"], ["U"], ["U"], ["L"], ["D"], ["R"], ["R"], ["U"], ["L"], ["D"]]
+        // Expect: [null, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3]
+        SnakeGame snakeGame(3, 3, { {2, 0},{0, 0},{0, 2}, {2, 2} });
+
+        snakeGame.move("D");
+        snakeGame.move("D");
+        snakeGame.move("R");
+        snakeGame.move("U");
+        snakeGame.move("U");
+        snakeGame.move("L");
+        snakeGame.move("D");
+        snakeGame.move("R");
+        snakeGame.move("R");
+        snakeGame.move("U");
+        snakeGame.move("L");
+        snakeGame.move("D");
     }
 }
