@@ -258,8 +258,8 @@ namespace DesignAndOthers
         virtual ~Node() {};
         virtual int evaluate() const = 0;
 
-        Node* left;
-        Node* right;
+        Node* left = nullptr;
+        Node* right = nullptr;
 
     protected:
         // define your fields here
@@ -697,7 +697,7 @@ namespace DesignAndOthers
             // Add new head.
             m_snakeBody.emplace_back(newX, newY);
 
-            return m_snakeBody.size() - 1;
+            return static_cast<int>(m_snakeBody.size() - 1);
         }
 
     private:
@@ -707,6 +707,85 @@ namespace DesignAndOthers
 
         int m_height;
         int m_width;
+    };
+
+    //-----------------------------------------------------------------------------
+    // 631. Design Excel Sum Formula (Hard)
+    //-----------------------------------------------------------------------------
+    class Excel
+    {
+
+    public:
+        Excel(int height, char width)
+        {
+            m_matrix.resize(height, vector<int>(width - 'A' + 1, 0));
+        }
+
+        void set(int row, char column, int val)
+        {
+            if (m_formulas.count({ row, column }) > 0)
+            {
+                m_formulas.erase({ row, column });
+            }
+
+            m_matrix[row - 1][column - 'A'] = val;
+        }
+
+        int get(int row, char column)
+        {
+            if (m_formulas.count({ row, column }) > 0)
+            {
+                return sum(row, column, m_formulas[{ row, column }]);
+            }
+
+            return m_matrix[row - 1][column - 'A'];
+        }
+
+        int sum(int row, char column, vector<string> numbers)
+        {
+            int result = 0;
+            for (const auto& str : numbers)
+            {
+                // There should be only one ':'.
+                size_t index = str.find(':');
+                if (index == string::npos)
+                {
+                    // The str may look like A2.
+                    char col = str[0];
+                    int row = stoi(str.substr(1));
+                    // (row, col) may be connected to another cell, so we should call get()
+                    // rather than access m_matrix directly.
+                    result += get(row, col);
+                }
+                else
+                {
+                    int y1 = str[0] - 'A' + 1;
+                    int x1 = stoi(str.substr(1, index - 1));
+                    string secondStr = str.substr(index + 1);
+                    int y2 = secondStr[0] - 'A' + 1;
+                    int x2 = stoi(secondStr.substr(1));
+
+                    for (int i = x1; i <= x2; ++i)
+                    {
+                        for (int j = y1; j <= y2; ++j)
+                        {
+                            result += get(i, j + 'A' - 1);
+                        }
+                    }
+                }
+            }
+
+            m_formulas[{row, column}] = numbers;
+
+            return result;
+        }
+
+    private:
+
+        // Use two data structures to store the data.
+        // One is for scalar, the another one is for 'formulas'.
+        vector<vector<int>> m_matrix;
+        map<pair<int, char>, vector<string>> m_formulas;
     };
 
     //-----------------------------------------------------------------------------
@@ -804,5 +883,12 @@ namespace DesignAndOthers
         snakeGame.move("U");
         snakeGame.move("L");
         snakeGame.move("D");
+
+        // 631. Design Excel Sum Formula (Hard)
+        Excel excel(3, 'C');
+        excel.set(1, 'A', 2);
+        excel.sum(3, 'C', { "A1", "A1:B2" }); // return 4
+        excel.set(2, 'B', 2);
+        excel.get(3, 'C'); // return 6
     }
 }

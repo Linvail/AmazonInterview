@@ -634,7 +634,7 @@ namespace SortingAndSearching
         // We want the first part to be minimum, meaning removing largest numbers.
         // Similarly, we want the second part to be maximum, meaning removing the
         // smallest numbers.
-        const int n = nums.size() / 3;
+        const size_t n = nums.size() / 3;
         // Initialize with the first 3 numbers.
         priority_queue<int> maxHeap(nums.begin(), nums.begin() + n);
         // Initialize with the last 3 numbers.
@@ -669,7 +669,7 @@ namespace SortingAndSearching
         diff[0] = sumMin;
 
         // Scan for the 1st part.
-        for (int i = n; i < 2 * n; ++i)
+        for (size_t i = n; i < 2 * n; ++i)
         {
             if (maxHeap.top() > nums[i])
             {
@@ -683,7 +683,7 @@ namespace SortingAndSearching
         long long sumMax = std::accumulate(nums.begin() + 2 * n, nums.end(), 0LL);
         diff[n] -= sumMax;
         // Scan backward for the 2nd part.
-        for (int i = 2 * n - 1; i > n - 1; --i)
+        for (size_t i = 2 * n - 1; i > n - 1; --i)
         {
             if (minHeap.top() < nums[i])
             {
@@ -709,14 +709,96 @@ namespace SortingAndSearching
             int remainder = t % 60;
             if (remainder == 0)
             {
-                result += remainderMap[0];
+                result += static_cast<int>(remainderMap[0]);
             }
             else if (remainderMap.count(60 - remainder))
             {
-                result += remainderMap[60 - remainder];
+                result += static_cast<int>(remainderMap[60 - remainder]);
             }
             remainderMap[remainder]++;
         }
+
+        return result;
+    }
+
+    //-----------------------------------------------------------------------------
+    // 2100. Find Good Days to Rob the Bank (Medium)
+    //-----------------------------------------------------------------------------
+    vector<int> goodDaysToRobBank(const vector<int>& security, int time)
+    {
+        const size_t len = security.size();
+        vector<int> result;
+        // Method 1: Use two monotonic queues to store the non-increasing days on
+        // the left and the non-decreasing days on the right.
+        // O(len) time
+        // O(time) space
+        #if(METHOD1)
+
+        deque<size_t> nonIncreaseQueue;
+        deque<size_t> nonDecreasingQueue;
+
+
+        for (size_t i = 0; i + time < len; ++i)
+        {
+            while (!nonIncreaseQueue.empty() && security[nonIncreaseQueue.back()] < security[i])
+            {
+                nonIncreaseQueue.pop_back();
+            }
+            nonIncreaseQueue.push_back(i);
+            if (i >= time && nonIncreaseQueue.front() < i - time)
+            {
+                nonIncreaseQueue.pop_front();
+            }
+
+            while (!nonDecreasingQueue.empty() && security[nonDecreasingQueue.back()] > security[i + time])
+            {
+                nonDecreasingQueue.pop_back();
+            }
+            nonDecreasingQueue.push_back(i + time);
+            if (nonDecreasingQueue.front() < i)
+            {
+                nonDecreasingQueue.pop_front();
+            }
+
+            if (nonIncreaseQueue.size() == time + 1 && nonDecreasingQueue.size() == time + 1)
+            {
+                result.push_back(static_cast<int>(i));
+            }
+        }
+
+        #else
+
+        // Method 2: Use a vector to denote the length of non-decreasing subarray
+        // from each index.
+        vector<size_t> nonDecreasingLength(len, 1);
+        // Scan from right to left.
+        for (int i = static_cast<int>( len - 2 ); i >= 0; i--)
+        {
+            if (security[i] <= security[i + 1])
+            {
+                nonDecreasingLength[i] += nonDecreasingLength[i + 1];
+            }
+        }
+
+        int nonIncreasingLength = 1;
+        for (size_t i = 0; i + time < len; ++i)
+        {
+            if (i > 0 && security[i] <= security[i - 1])
+            {
+                nonIncreasingLength++;
+            }
+            else
+            {
+                nonIncreasingLength = 1;
+            }
+
+            if (nonIncreasingLength > time && nonDecreasingLength[i] > time)
+            {
+                result.push_back(static_cast<int>(i));
+            }
+        }
+
+        #endif
 
         return result;
     }
@@ -877,5 +959,12 @@ namespace SortingAndSearching
         // Input: time = [30, 20, 150, 100, 40]
         // Output : 3
         cout << "\n1010. Pairs of Songs With Total Durations Divisible by 60: " << numPairsDivisibleBy60({ 30, 20, 150, 100, 40 }) << endl;
+
+        // 2100. Find Good Days to Rob the Bank (Medium)
+        // Input: security = [5, 3, 3, 3, 5, 6, 2], time = 2
+        // Output : [2, 3]
+        cout << "\n2100. Find Good Days to Rob the Bank: " << endl;
+        resultVI = goodDaysToRobBank({ 5, 3, 3, 3, 5, 6, 2 }, 2);
+        PrintVector(resultVI);
     }
 }

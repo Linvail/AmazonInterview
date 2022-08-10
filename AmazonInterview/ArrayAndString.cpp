@@ -797,17 +797,17 @@ namespace ArrayAndString
         while (!inputStr.empty())
         {
             // Find the first occurrence of the last char.
-            const int idx = inputStr.find(inputStr.back());
+            const size_t idx = inputStr.find(inputStr.back());
             if (idx == inputStr.size() - 1)
             {
                 // If this char only occurs in the end, it is unique.
                 // So, we must move it to the middle.
-                result += idx / 2;
+                result += static_cast<int>(idx / 2);
             }
             else
             {
                 // It takes 'idx' steps to move it to the beginning.
-                result += idx;
+                result += static_cast<int>(idx);
                 // Remove this char.
                 inputStr.erase(idx, 1);
             }
@@ -822,7 +822,7 @@ namespace ArrayAndString
     //-----------------------------------------------------------------------------
     string reorganizeString(const string& s)
     {
-        const int len = s.size();
+        const size_t len = s.size();
         unordered_map<char, size_t> charCountMap;
         for (const auto& c : s)
         {
@@ -934,7 +934,7 @@ namespace ArrayAndString
         int maxSumMinProduct(const vector<int>& nums)
         {
             // We need to a monotonic increasing stack and a prefix sum array.
-            const int len = nums.size();
+            const size_t len = nums.size();
             vector<long long> prefixSum(len + 1, 0);
             // assume nums =   [1 2 3]
             // prefixSum =   [0 1 3 6]
@@ -1047,7 +1047,7 @@ namespace ArrayAndString
             int vol = 0;
             for (int j = i; j < i + len; ++j)
             {
-                const size_t idx = j % len;
+                const int idx = j % len;
                 vol += gas[idx] - cost[idx];
                 if (vol < 0)
                 {
@@ -1100,7 +1100,7 @@ namespace ArrayAndString
             const int diff = sum - k;
             if (prefixSim2Count.count(diff) > 0)
             {
-                result += prefixSim2Count[diff];
+                result += static_cast<int>(prefixSim2Count[diff]);
             }
             prefixSim2Count[sum]++;
         }
@@ -1113,7 +1113,7 @@ namespace ArrayAndString
     //-----------------------------------------------------------------------------
     int triangularSum(vector<int>& nums)
     {
-        int len = nums.size();
+        size_t len = nums.size();
         while (len > 1)
         {
             for (size_t i = 0; i < len - 1; ++i)
@@ -1154,7 +1154,7 @@ namespace ArrayAndString
 
         // Scan from right to left to make sure the current child has more candy
         // if the current on has higher rating than its right neighbor.
-        for (int i = len - 2; i >= 0; i--)
+        for (int i = static_cast<int>(len - 2); i >= 0; i--)
         {
             if (ratings[i] > ratings[i + 1])
             {
@@ -1167,6 +1167,106 @@ namespace ArrayAndString
         }
 
         return std::accumulate(candies.begin(), candies.end(), 0);
+    }
+
+    //-----------------------------------------------------------------------------
+    // 564. Find the Closest Palindrome (Hard)
+    //-----------------------------------------------------------------------------
+    string nearestPalindromic(const string& n)
+    {
+        size_t digits = n.size();
+        if (digits == 1)
+        {
+            // Special case for single digit numbers.
+            return to_string(stoi(n) - 1);
+        }
+
+        // Assume the input string has 4 digits - 2537.
+        // There are 5 possible cases.
+        // Case 1. The candidate has one more digit, which must be 10001.
+        // Case 2. The candidate has one less digit, which must be 999.
+        // Case 3. The candidate has the same digit. The prefix remains the same (25), and the postfix is the mirror of the prefix (2552).
+        // Case 4. The candidate has the same digit. The prefix increases by 1 (26), and the postfix is the mirror of the prefix (2662).
+        // Case 5. The candidate has the same digit. The prefix decreases by 1 (24), and the postfix is the mirror of the prefix (2442).
+        // Among these 5 candidates, the one having the least absolute difference from the original number is the answer.
+        vector<unsigned long long> candidates;
+
+        // + 1 is for the input having odd digit.
+        int prefix = stoi(n.substr(0, ( digits + 1 ) / 2));
+        // Deal with case 3 ~ 5.
+        // prefix + 1 might make the number of digits increase but it doesn't matter because it would only generate bigger candidate.
+        // However, we only care the smallest candidate.
+        vector<int> prefixes{ prefix, prefix + 1, prefix - 1 };
+        for (const auto& prefix : prefixes)
+        {
+            // Prefix of 12345 is 123.
+            string prefixStr = to_string(prefix);
+            string posfix(prefixStr);
+            if (digits & 0b1)
+            {
+                // If the digits is odd, we need to remove the number in the middle.
+                posfix.pop_back();
+            }
+            std::reverse(posfix.begin(), posfix.end());
+            string full = prefixStr + posfix;
+            // If n is "11", we will have one candidate as 11, which is not eligible. We shouldn't add it.
+            if (full != n)
+            {
+                candidates.push_back(stoull(full));
+            }
+        }
+
+        // Case 1:
+        candidates.push_back(static_cast<unsigned long long>(pow(10, digits)) + 1);
+        // Case 2:
+        candidates.push_back(static_cast<unsigned long long>(pow(10, digits - 1)) - 1);
+
+        unsigned long long original = stoull(n);
+        long long minDiff = std::numeric_limits<long long>::max();
+        int resultIdx = 0;
+        for (int i = 0; i < candidates.size(); ++i)
+        {
+            long long diff = abs(static_cast<long long>(candidates[i] - original));
+            if (diff < minDiff || (diff == minDiff && candidates[i] < candidates[resultIdx]))
+            {
+                minDiff = diff;
+                resultIdx = i;
+            }
+        }
+
+        return to_string(candidates[resultIdx]);
+    }
+
+    //-----------------------------------------------------------------------------
+    // 1209. Remove All Adjacent Duplicates in String II (Medium)
+    //-----------------------------------------------------------------------------
+    string removeDuplicates(const string& s, int k)
+    {
+        // Using one stack to store the number of its occurrence.
+        vector<pair<size_t, char>> charStack;
+        for (const auto& c : s)
+        {
+            if (charStack.empty() || charStack.back().second != c)
+            {
+                charStack.emplace_back(1, c);
+            }
+            else
+            {
+                charStack.back().first++;
+                if (charStack.back().first == k)
+                {
+                    charStack.pop_back();
+                }
+            }
+        }
+
+        string result;
+        for (const auto& p : charStack)
+        {
+            result.append(p.first, p.second);
+        }
+
+        return result;
     }
 
     //-----------------------------------------------------------------------------
@@ -1335,5 +1435,15 @@ namespace ArrayAndString
         // Input: ratings = [1,2,2]
         // Output: 4
         cout << "\n135. Candy: " << candy({ 1,2,2 }) << endl;
+
+        // 564. Find the Closest Palindrome (Hard)
+        // Input: n = "123"
+        // Output: "121"
+        cout << "\n564. Find the Closest Palindrome: " << nearestPalindromic("2147483647") << endl;
+
+        // 1209. Remove All Adjacent Duplicates in String II (Medium)
+        // Input: s = "deeedbbcccbdaa", k = 3
+        // Output: "aa
+        cout << "\n1209. Remove All Adjacent Duplicates in String II: " << removeDuplicates("deeedbbcccbdaa", 3) << endl;
     }
 }
