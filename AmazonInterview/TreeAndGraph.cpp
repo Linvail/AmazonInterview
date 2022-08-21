@@ -783,6 +783,7 @@ namespace TreeAndGraph
 
             struct intPairHash
             {
+                // Note this function must be const!
                 unsigned long long operator()(const pair<int, int>& p) const
                 {
                     return ( static_cast<unsigned long long>( p.first ) << 32 ) | static_cast<unsigned long long>( p.second );
@@ -831,6 +832,156 @@ namespace TreeAndGraph
 
             return -1;
         }
+    };
+
+    //-----------------------------------------------------------------------------
+    // 1197. Minimum Knight Moves (Medium)
+    //-----------------------------------------------------------------------------
+    class Solution1197
+    {
+    public:
+        int minKnightMoves(int x, int y)
+        {
+            // It requires minimum number of steps, so we should be able to use
+            // BFS.
+            // The regular BFS would cause TLE. To overcome, we can restrict the
+            // problem in 1st quadrant.
+            x = abs(x);
+            y = abs(y);
+
+            int steps = 0;
+            vector<pair<int, int>> dirs = {
+                {-2, 1},
+                {-1, 2},
+                {1, 2},
+                {2, 1},
+                {2, -1},
+                {1, -2},
+                {-1, -2},
+                {-2, -1}
+            };
+
+            queue<pair<int, int>> unprocessed;
+            unprocessed.emplace(0, 0);
+
+            // Using unordered_set<string> would case TLE.
+
+            struct intPairHash
+            {
+                // Note this function must be const!
+                unsigned long long operator()(const pair<int, int>& p) const
+                {
+                    return ( static_cast<unsigned long long>( p.first ) << 32 ) | static_cast<unsigned long long>( p.second );
+                }
+            };
+
+            unordered_set<pair<int, int>, intPairHash> visited;
+            visited.emplace(0, 0);
+
+            while (!unprocessed.empty())
+            {
+                const size_t len = unprocessed.size();
+                for (size_t i = 0; i < len; ++i)
+                {
+                    pair<int, int> cur = unprocessed.front();
+                    unprocessed.pop();
+
+                    if (cur.first == x && cur.second == y)
+                    {
+                        return steps;
+                    }
+
+                    for (const auto& dir : dirs)
+                    {
+                        const int newX = cur.first + dir.first;
+                        const int newY = cur.second + dir.second;
+
+                        if (newX < -1 || newY < -1 || visited.count({newX, newY}) > 0)
+                        {
+                            continue;
+                        }
+
+                        unprocessed.emplace(newX, newY);
+                        visited.emplace(newX, newY);
+                    }
+
+                }
+
+                steps++;
+            }
+
+            return -1;
+        }
+    };
+
+    //-----------------------------------------------------------------------------
+    // 688. Knight Probability in Chessboard (Medium)
+    //
+    // Topic: dynamic programming
+    //-----------------------------------------------------------------------------
+    class Solution688
+    {
+    public:
+        using MovingRec = unordered_map<int, double>;
+
+        double knightProbability(int n, int k, int row, int column)
+        {
+            // We can use DFS or BFS to traverse the table, but we need to a scheme
+            // to reduce the duplicated calculation.
+            // For <i, j>, we must remember a pair :
+            // <remaining k moves, the ways of movement to keep the knight on the table>
+
+            return traverse(n, k, row, column);
+        }
+
+    private:
+
+        double traverse(int n, int k, int x, int y)
+        {
+            if (x < 0 || y < 0 || x >= n || y >= n) return 0;
+            // No need to move, so the probability should be 1.
+            if (k == 0) return 1;
+
+            // Check if we have cached the result.
+            if (m_table[{x, y}].count(k) > 0)
+            {
+                return m_table[{x, y}][k];
+            }
+
+            double tempProbability = 0;
+            for (const auto& dir : m_dirs)
+            {
+                int newX = x + dir.first;
+                int newY = y + dir.second;
+
+                // Each step contributes 1/8.
+                tempProbability += traverse(n, k - 1, newX, newY) / m_dirs.size();
+            }
+
+            m_table[{x, y}][k] = tempProbability;
+            return tempProbability;
+        }
+
+        vector<pair<int, int>> m_dirs = {
+            {-2, 1},
+            {-1, 2},
+            {1, 2},
+            {2, 1},
+            {2, -1},
+            {1, -2},
+            {-1, -2},
+            {-2, -1}
+        };
+
+        struct IntPairHash
+        {
+            unsigned long long operator()(const pair<int, int>& p) const
+            {
+                return ( static_cast<unsigned long long>( p.first ) << 32 ) | static_cast<unsigned long long>( p.second );
+            }
+        };
+
+        unordered_map<pair<int, int>, MovingRec, IntPairHash> m_table;
     };
 
 
@@ -955,5 +1106,19 @@ namespace TreeAndGraph
         inputStr = "[[0,1],[1,0]]";
         LeetCodeUtil::BuildIntMatrixFromString(inputStr, &inputVVI);
         cout << "\n1091. Shortest Path in Binary Matrix: " << sol1091.shortestPathBinaryMatrix(inputVVI) << endl;
+
+        // 1197. Minimum Knight Moves (Medium)
+        // Input: x = 2, y = 1
+        // Output: 1
+        // Input: x = 0, y = 1
+        // Output : 3
+        Solution1197 sol1197;
+        cout << "\n1197. Minimum Knight Moves: " << sol1197.minKnightMoves(-87, -83) << endl;
+
+        // 688. Knight Probability in Chessboard (Medium)
+        // Input: n = 3, k = 2, row = 0, column = 0
+        // Output: 0.06250
+        Solution688 sol688;
+        cout << "\n688. Knight Probability in Chessboard: " << sol688.knightProbability(3, 2, 0, 0) << endl;
     }
 }

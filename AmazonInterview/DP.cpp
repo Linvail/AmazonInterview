@@ -3,6 +3,8 @@
 
 #include <string>
 #include <unordered_set>
+#include <queue>
+#include <stack>
 
 namespace DP
 {
@@ -34,7 +36,7 @@ namespace DP
             //  k = 1 EPEATCOD | E  0 ( leftmost E was already non - unique )
             //       REPEATCOD | E  0
             // dp[i] = dp[i-1] + (i-j) - (j-k)
-            const int len = s.size();
+            const size_t len = s.size();
 
             // It is important to fill with -1. For example, for AB, dp should be 3 as 3 = 1 + (i - (-1)) - (-1 - -1)
             // => 3 = 1 + (i - (-1)) - (0) => 3 = 1 + 1 + 1.
@@ -249,7 +251,7 @@ namespace DP
             //                             We pick minimum for the above two cases.
             // Because dp[i+1] only relies on the previous dp[i], so we can optimize the space.
             // We just need one variable instead of an array.
-            const int len = s.size();
+            const size_t len = s.size();
             int miniFlipRequired = 0;
             int countOfOne = 0;
 
@@ -302,6 +304,253 @@ namespace DP
     };
 
     //-----------------------------------------------------------------------------
+    // 2222. Number of Ways to Select Buildings (Medium)
+    //-----------------------------------------------------------------------------
+    long long numberOfWays(const string& s)
+    {
+        #if(USE_DP)
+        // Method 1. Use Dynamic programming.
+        // Make dp[len][ch] demote the number of alternating strings of length of
+        // 'len' and ending with character - 'ch'.
+        // The eligible string could end with 0 or 1, so the answer is
+        // dp[3][0] + dp[3][1].
+
+        long long dp[4][2] = {};
+
+        // dp[0] means the length of string is 0. It is meaningless. Set to 1 to
+        // facilitate the further calculations.
+        dp[0][0] = 1;
+        dp[0][1] = 1;
+
+        for (int i = 0; i < s.size(); ++i)
+        {
+            for (int len = 1; len <= 3; ++len)
+            {
+                if (s[i] == '0')
+                {
+                    dp[len][0] += dp[len - 1][1];
+                }
+                else
+                {
+                    dp[len][1] += dp[len - 1][0];
+                }
+            }
+        }
+
+        return dp[3][0] + dp[3][1];
+
+        #else
+
+        // Method 2:
+        // The eligible ways are 010 or 101.
+        // When we encounter a '1', the number of ways is x * y, where x is the
+        // number of '0' to the left and y is the number 0 to the right.
+        // Similarly, when we encounter a '0', the number of ways can be calculated.
+
+        // Firstly, count all '1' and '0'.
+        size_t numberOfOne = 0;
+        size_t numberOfZero = 0;
+        for (const auto& c : s)
+        {
+            if (c == '1')
+            {
+                numberOfOne++;
+            }
+            else
+            {
+                numberOfZero++;
+            }
+        }
+
+        long long result = 0;
+        size_t numberOfOneOnLeft = 0;
+        size_t numberOfZeroOnLeft = 0;
+        for (int i = 0; i < s.size(); ++i)
+        {
+            if (s[i] == '1')
+            {
+                result += numberOfZeroOnLeft * ( numberOfZero - numberOfZeroOnLeft );
+                numberOfOneOnLeft++;
+            }
+            else
+            {
+                result += numberOfOneOnLeft * ( numberOfOne - numberOfOneOnLeft );
+                numberOfZeroOnLeft++;
+            }
+        }
+
+        return result;
+        #endif
+    }
+
+    //-----------------------------------------------------------------------------
+    // 871. Minimum Number of Refueling Stops (Hard)
+    //
+    // Topic: Dynamic programming, Heap (max heap), greedy.
+    //-----------------------------------------------------------------------------
+    int minRefuelStops(int target, int startFuel, const vector<vector<int>>& stations)
+    {
+        // This can be solved by DP or max heap.
+        #define HEAP_GREEDY 1
+        #define DP_GREEDY 0
+
+        #if( DP_GREEDY )
+        // It is not easy to define the DP equation.
+        // Let dp[i] be the max reachable distance after the i-th refuel.
+        // We want the first dp[i] that reaches the target.
+        // Then, we have iterate all stations. At station k, we may reach it if
+        // dp[i] >= k's position (stations[k][0])
+        // If we can reach, we iterate for all i (0 <= i <= k) backwardly to update
+        // dp[i + 1] = max(dp[i + 1], dp[i] + stations[k][1]);
+        const size_t n = stations.size();
+        vector<size_t> dp(n + 1, startFuel);
+
+        for (size_t k = 0; k < n; ++k)
+        {
+            // We are at k, so we at most have refueled k times.
+            for (int i = static_cast<int>(k); i >= 0 && dp[i] >= stations[k][0]; i--)
+            {
+                dp[i + 1] = max(dp[i + 1], dp[i] + stations[k][1]);
+            }
+        }
+
+        // Until we iterated all k, we don't know the final result of dp.
+        for (int j = 0; j < dp.size(); j++)
+        {
+            if (dp[j] >= target)
+            {
+                return j;
+            }
+        }
+
+        return -1;
+        #elif(HEAP_GREEDY)
+
+        // The idea of heap + greedy is that we always pick the station having most of fuel to refuel.
+        // The most tricky part is that we may choose station backwardly while the car is not allowed
+        // to travel backwardly.
+        // For example, we may pick station 3 from stack and pick station 2. It actually means that we will
+        // refuel in station 2 and 3.
+
+        int result = 0;
+        int lastStation = 0;
+        const size_t n = stations.size();
+        priority_queue<int> pq;
+        for (; startFuel < target; ++result)
+        {
+            while (lastStation < n && stations[lastStation][0] <= startFuel)
+            {
+                pq.push(stations[lastStation][1]);
+                lastStation++;
+            }
+
+            if (pq.empty())
+                return -1;
+
+            startFuel += pq.top();
+            pq.pop();
+        }
+
+        return result;
+
+        #endif
+    }
+
+    //-----------------------------------------------------------------------------
+    // 2355. Maximum Number of Books You Can Take (Hard)
+    //
+    // Topic: Dynamic programming, monotonic stack.
+    //-----------------------------------------------------------------------------
+    class Solution2355
+    {
+    public:
+
+        long long maximumBooks(const vector<int>& b)
+        {
+            #define DP 1
+
+            #if(DP)
+
+            // Let dp[i] be the maximum number of books we can take from bookshelves 0 ~ i
+            // and we must take all books from the bookshelf i.
+            // Use a monotonic increasing stack to store the valid contiguous section.
+            // For example, [48, 100, 51, 52]. When we reach i = 3, the stack will be
+            // [0, 2]. It means that we can take from bookshelf 2, 1, 0. We will take
+            // 51, 50, 48.
+            // 51 + 50 is calculated from the formula of sum of arithmetic sequence.
+            // 48 is from dp[0].
+            // Note that [3, 5, 4] won't form a valid section because we cannot take 3 books
+            // from bookshelf 0. We can only take 2. So the index of 3 and 5 must be removed
+            // from the stack.
+            const size_t len = b.size();
+            vector<long long> dp(len);
+            stack<int> monotonicStack;
+
+            for (int i = 0; i < len; ++i)
+            {
+                int topIndex = monotonicStack.empty() ? -1 : monotonicStack.top();
+
+                while (!monotonicStack.empty() && b[i] - b[monotonicStack.top()] < i - monotonicStack.top())
+                {
+                    monotonicStack.pop();
+                    topIndex = monotonicStack.empty() ? -1 : monotonicStack.top();
+                }
+
+                dp[i] = ssum(b[i], topIndex == -1 ? i + 1 : i - topIndex);
+
+                if (topIndex != -1)
+                {
+                    dp[i] += dp[topIndex];
+                }
+
+                monotonicStack.push(i);
+            }
+
+            return *max_element(dp.begin(), dp.end());
+
+            #else
+
+            vector<int> ms;
+            long long cur = 0, res = 0;
+            for (int i = 0; i < b.size(); ++i)
+            {
+                while (!ms.empty() && b[i] - b[ms.back()] < i - ms.back())
+                {
+                    int j = ms.back(); ms.pop_back();
+                    cur -= ssum(b[j], ms.empty() ? j + 1 : j - ms.back());
+                }
+
+                cur += ssum(b[i], ms.empty() ? i + 1 : i - ms.back());
+                ms.push_back(i);
+                res = max(cur, res);
+            }
+            return res;
+
+            #endif
+        }
+
+    private:
+        // Get sum of arithmetic sequence
+        long long ssum(long long maxValue, int count)
+        {
+            if (count > maxValue)
+            {
+                // count = 100, maxValue = 3.
+                // Accumulate 1 ~ 3:
+                return ( maxValue + 1 ) * maxValue / 2;
+            }
+            else
+            {
+                // count = 3, maxValue = 100.
+                // Accumulate 100 ~ 98:
+                return ( maxValue + ( maxValue - count + 1 ) ) * count / 2;
+            }
+        }
+
+    };
+
+
+    //-----------------------------------------------------------------------------
     // Test function
     //-----------------------------------------------------------------------------
     void TestDP()
@@ -342,5 +591,29 @@ namespace DP
         // 2262. Total Appeal of A String (Hard)
         Solution2262 sol2262;
         cout << "\n2262. Total Appeal of A String: " << sol2262.appealSum("code") << endl;
+
+        // 2222. Number of Ways to Select Buildings (Medium)
+        // Input: s = "001101"
+        // Output: 6
+        cout << "\n2222. Number of Ways to Select Buildings: " << numberOfWays("001101") << endl;
+
+        // 871. Minimum Number of Refueling Stops (Hard)
+        // Input: target = 100, startFuel = 10, stations = [[10,60],[20,30],[30,30],[60,40]]
+        // Output: 2
+        // Input: target = 100, startFuel = 1, stations = [[10,100]]
+        // Output: -1
+        // Input: target = 1, startFuel = 1, stations = []
+        // Output: 0
+        // 1000, 299
+        // [[13, 21], [26, 115], [100, 47], [225, 99], [299, 141], [444, 198], [608, 190], [636, 157], [647, 255], [841, 123]]
+        //vector<vector<int>> inputVVI = { {} };
+        vector<vector<int>> inputVVI;
+        LeetCodeUtil::BuildIntMatrixFromString("[[13, 21], [26, 115], [100, 47], [225, 99], [299, 141], [444, 198], [608, 190], [636, 157], [647, 255], [841, 123]]", &inputVVI);
+        cout << "\n871. Minimum Number of Refueling Stops: " << minRefuelStops(1000, 299, inputVVI) << endl;
+
+        // 2355. Maximum Number of Books You Can Take (Hard)
+        Solution2355 sol2355;
+        // 48, 100, 51, 10
+        cout << "\n2355. Maximum Number of Books You Can Take: " << sol2355.maximumBooks({ 48, 100, 51 }) << endl;
     }
 }

@@ -789,6 +789,45 @@ namespace DesignAndOthers
     };
 
     //-----------------------------------------------------------------------------
+    // 981. Time Based Key-Value Store (Medium)
+    //-----------------------------------------------------------------------------
+    class TimeMap
+    {
+    public:
+        TimeMap()
+        {
+        }
+
+        void set(string key, string value, int timestamp)
+        {
+            m_dataMap[key].emplace(timestamp, value);
+        }
+
+        string get(string key, int timestamp)
+        {
+            if (m_dataMap.count(key) <= 0)
+            {
+                return "";
+            }
+
+            auto it = m_dataMap[key].upper_bound(timestamp);
+            if (it != m_dataMap[key].begin())
+            {
+                return prev(it)->second;
+            }
+            else
+            {
+                return "";
+            }
+        }
+
+    private:
+
+        unordered_map<string, map<int, string>> m_dataMap;
+
+    };
+
+    //-----------------------------------------------------------------------------
     // Test function
     //-----------------------------------------------------------------------------
     void TestDesignAndOthers()

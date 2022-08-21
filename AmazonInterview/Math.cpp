@@ -145,6 +145,41 @@ namespace Math
     };
 
     //-----------------------------------------------------------------------------
+    // 634. Find the Derangement of An Array (Medium)
+    // Topic: Math, Dynamic programming
+    //-----------------------------------------------------------------------------
+    int findDerangement(int n)
+    {
+        // n = 1, answer = 0.
+        // n = 2, answer = 1.
+        // n = 3, answer = 2.
+        // When n <= 3, the answer is easy. After 4, we need to find the recursion
+        // equation.
+        // Let dp[n] denotes the number of derangements for n.
+        // n = 4. [1, 2, 3, 4]. Consider move '4' to another location. We have 3 choices.
+        // Assume we move 4 to 3's location: [x, x, 4, x].
+        // Now we can divide the problem into two subproblems:
+        // 1. 3 is in 4's location, i.e. [x, x, 4, 3]. In this case, we have dp[2].
+        // 2. 3 is not in 4's location, i.e. [x, x, 4, x(not 3)]. In this case, the number of derangements is equal to dp[3].
+        // So, we have dp[4] = 3 * (dp[3] + dp[2]).
+        // In general, we have dp[i] = (i - 1) * (dp[i - 1] + dp[i - 2]).
+
+        long long prev = 1;
+        long long prevOfPrev = 0;
+        long long result = prev;
+
+        for (int i = 3; i <= n; ++i)
+        {
+            result = (( i - 1 ) * ( prev + prevOfPrev )) % 1000000007;
+            // Update prev and prevOfPrev.
+            prevOfPrev = prev;
+            prev = result;
+        }
+
+        return n == 1 ? 0 : static_cast<int>(result);
+    }
+
+    //-----------------------------------------------------------------------------
     // Test function.
     //-----------------------------------------------------------------------------
     void TestMath()
@@ -166,5 +201,10 @@ namespace Math
         // Expect: 40006
         Solution1360 sol1360;
         cout << "\n1360. Number of Days Between Two Dates: " << sol1360.daysBetweenDates("2100-09-22", "1991-03-12") << endl;
+
+        // 634. Find the Derangement of An Array (Medium)
+        // Input: 10
+        // Output: 1334961
+        cout << "\n634. Find the Derangement of An Array: " << findDerangement(10) << endl;
     }
 }

@@ -10,6 +10,7 @@
 #include <string_view> // C++17
 #include <queue>
 #include <numeric>
+#include <stack>
 
 namespace SortingAndSearching
 {
@@ -804,6 +805,225 @@ namespace SortingAndSearching
     }
 
     //-----------------------------------------------------------------------------
+    // 496. Next Greater Element I (Easy)
+    // Topic: Monotonic stack
+    //-----------------------------------------------------------------------------
+    vector<int> nextGreaterElement(const vector<int>& nums1, const vector<int>& nums2)
+    {
+        // We can use monotonic decreasing stack to find the first greater number
+        // of every element if it exists.
+        map<int, int> numberToGreaterNumber;
+        stack<int> monotonicDecreasing;
+
+        for (int i = 0; i < nums2.size(); ++i)
+        {
+            while (!monotonicDecreasing.empty() && monotonicDecreasing.top() < nums2[i])
+            {
+                numberToGreaterNumber[monotonicDecreasing.top()] = nums2[i];
+                monotonicDecreasing.pop();
+            }
+
+            monotonicDecreasing.push(nums2[i]);
+        }
+
+        vector<int> result;
+        for (const auto& n : nums1)
+        {
+            if (numberToGreaterNumber.count(n) > 0)
+            {
+                result.push_back(numberToGreaterNumber[n]);
+            }
+            else
+            {
+                result.push_back(-1);
+            }
+        }
+
+        return result;
+    }
+
+    //-----------------------------------------------------------------------------
+    // 878. Nth Magical Number (Hard)
+    // 1 <= n <= 10^9
+    // 2 <= a, b <= 4 * 10^4
+    //
+    // Topic: Math, binary search.
+    //-----------------------------------------------------------------------------
+    class Solution878
+    {
+    public:
+        int nthMagicalNumber(int n, int a, int b)
+        {
+            // There are two approaches for this.
+            // 1. Basic math + strong perception + binary search.
+            // 2. Hard math.
+            // The following code will demonstrate the 1st approach.
+            // k = 10, a = 2, b = 3.
+            // Among [1..k], How many numbers are there can be divided by 2 or 3?
+            // For a, there are 2, 4, 6, 8, 10. 5 = 10 / 2.
+            // For b, there are 3, 6, 9. 3 = 10 / 3.
+            // Then, how many are there can be divided by 2 or 3?
+            // There are 2, 3, 4, 6, 8, 9, 10. We have 7. It is not 5 + 3 (8), because we
+            // the number: 6 cannot be count twice. 6 is the least common multiple (LCM).
+            // So, we know:
+            // The number of positive integers that is not larger than x and can be divided
+            // by a or b is:
+            // x / a + x / b - x / LCM(a, b).
+            // LCM(a, b) = a * b / GCD(a, b), where GCD is Greatest Common Divisor.
+            // GCD(a, b) = b == 0 ? a : GCD(b, a % b).
+            // Then, we need to find the x making the above equation = n.
+            // We can use binary search for x. We need to define lower bound and upper bound.
+            // The min x is min(a, b), and min of a/b is 2. So, the lower bound = 2.
+            // The max x is n * min(a, b). It is 4 * 10^13.
+
+            long long lcm = a * b / getGcd(a, b);
+            long long modulo = 1e9 + 7;
+            long long left = 2;
+            long long right = 4 * 1e13;
+
+            while (left < right)
+            {
+                long long mid = left + ( right - left ) / 2;
+                // Put mid into the equation.
+                long long canidate = mid / a + mid / b - mid / lcm;
+                if (canidate < n)
+                {
+                    left = mid + 1;
+                }
+                else
+                {
+                    right = mid;
+                }
+            }
+
+            return right % modulo;
+        }
+
+    private:
+
+        long long getGcd(long long a, long long b)
+        {
+            return b == 0 ? a : getGcd(b, a % b);
+        }
+    };
+
+    //-----------------------------------------------------------------------------
+    // 719. Find K-th Smallest Pair Distance (Hard)
+    // Topic: Two pointers, binary search, sorting
+    // 0 <= nums[i] < 1000000
+    //-----------------------------------------------------------------------------
+    class Solution719
+    {
+    public:
+        int smallestDistancePair(vector<int>& nums, int k)
+        {
+            // The most naive method is to calculate all distance and sort them.
+            // The regular sorting will take O(n log n).
+            // We can use bucket sort to achieve O(k) for 0 <= nums[i] < k because
+            // the question gives the maximum number of k.
+            #define BUCKET_SORT 0
+
+            #if( BUCKET_SORT )
+            vector<int> bucket(1000000, 0);
+            const int len = nums.size();
+            for (int i = 0; i < len; ++i)
+            {
+                for (int j = i + 1; j < len; j++)
+                {
+                    bucket[abs(nums[i] - nums[j])]++;
+                }
+            }
+
+            int count = 0;
+            for (int i = 0; i < bucket.size(); ++i)
+            {
+                count += bucket[i];
+                if (count > 0 && count >= k)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+            #else
+
+            // The better method is to use binary search (on their difference).
+            // It is much harder.
+            const int len = nums.size();
+            sort(nums.begin(), nums.end());
+            // The left boundary must be 0 for the case of two identical number.
+            int left = 0;
+            int right = nums.back() - nums[0];
+
+            while (left < right)
+            {
+                int mid = left + ( right - left ) / 2;
+                // Now we have a difference value - mid.
+                // The difficult part is how to find the number of difference values
+                // that are smaller than mid.
+                // For example, if mid = 3, the difference value could be 0, 1 ,2.
+                // We might have 0, 0, 1, 1, 2. Total 5. How do we get this?
+
+                int startIndex = 0;
+                int count = 0;
+                // Iterate all numbers.
+                for (int i = 0; i < len; ++i)
+                {
+                    // Find the range that can produces difference value < mid.
+                    // Find the startIndex as the left boundary.
+                    while (startIndex < len && nums[i] - nums[startIndex] > mid)
+                    {
+                        // Move startIndex right so we can get smaller mid because
+                        // nums is sorted.
+                        startIndex++;
+                    }
+                    // When considering nums[i], it can contribute (i - startIndex) difference value < mid.
+                    count += i - startIndex;
+                }
+
+                if (count < k)
+                {
+                    // Pick a bigger difference value, so the count will increase.
+                    left = mid + 1;
+                }
+                else
+                {
+                    right = mid;
+                }
+
+            }
+
+            return right;
+            #endif
+        }
+    };
+
+    //-----------------------------------------------------------------------------
+    // 2294. Partition Array Such That Maximum Difference Is K (Medium)
+    // Topic: Greedy, sorting
+    //-----------------------------------------------------------------------------
+    int partitionArray(vector<int>& nums, int k)
+    {
+        sort(nums.begin(), nums.end());
+        int count = 0;
+        for (int i = 0; i < nums.size(); ++i)
+        {
+            // Find the first number >= nums[start] + k.
+            int j = i + 1;
+            for ( ;j < nums.size(); j++)
+            {
+                if (nums[j] > nums[i] + k)
+                    break;
+            }
+
+            i = j - 1;
+            count++;
+        }
+
+        return count;
+    }
+
+    //-----------------------------------------------------------------------------
     // Test function.
     //-----------------------------------------------------------------------------
     void TestSortingAndSearching()
@@ -966,5 +1186,41 @@ namespace SortingAndSearching
         cout << "\n2100. Find Good Days to Rob the Bank: " << endl;
         resultVI = goodDaysToRobBank({ 5, 3, 3, 3, 5, 6, 2 }, 2);
         PrintVector(resultVI);
+
+        // 496. Next Greater Element I (Easy)
+        // Input: nums1 = [4,1,2], nums2 = [1,3,4,2]
+        // Output: [-1, 3, -1]
+        // Input: [1, 3, 5, 2, 4], [6, 5, 4, 3, 2, 1, 7]
+        // Output: [7,7,7,7,7]
+        resultVI = nextGreaterElement({ 1, 3, 5, 2, 4 }, { 6, 5, 4, 3, 2, 1, 7 });
+        cout << "\n496. Next Greater Element I: " << endl;
+        PrintVector(resultVI);
+
+        // 878. Nth Magical Number (Hard)
+        // Input: n = 4, a = 2, b = 3
+        // Output: 6
+        // Input: n = 7, a = 2, b = 3
+        // Output: 10
+        // Input:  1000000000, 40000 40000
+        // Output: 999720007
+        Solution878 sol878;
+        cout << "\n878. Nth Magical Number: " << sol878.nthMagicalNumber(1000000000, 40000, 40000) << endl;
+
+        // 719. Find K-th Smallest Pair Distance (Hard)
+        // Input: nums = [1,3,1], k = 1
+        // Output: 0
+        // Input: nums = [1,6,9,11,1], k = 2
+        // Output: 2
+        Solution719 sol719;
+        inputVI = { 1,6,9,11,1 };
+        cout << "\n719. Find K-th Smallest Pair Distance: " << sol719.smallestDistancePair(inputVI, 2) << endl;
+
+        // 2294. Partition Array Such That Maximum Difference Is K (Medium)
+        // Input: nums = [3,6,1,2,5], k = 2
+        // Output: 2
+        // Input: nums = [2,2,4,5], k = 0
+        // Output: 3
+        inputVI = { 2,2,4,5 };
+        cout << "\n2294. Partition Array Such That Maximum Difference Is K: " << partitionArray(inputVI, 0) << endl;
     }
 }
