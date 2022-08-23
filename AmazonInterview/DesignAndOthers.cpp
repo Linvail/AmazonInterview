@@ -225,13 +225,14 @@ namespace DesignAndOthers
                 vector<string> matches;
                 partial.push_back(searchWord[i]);
                 // Find the first not-less-than word.
+                // For example, if partial is mou, it will be mouse. If partial is mouse, it will be mouse.
                 auto it = std::lower_bound(products.begin(), products.end(), partial);
                 // Look forward and collect 3 words.
                 for (int j = 0; j < 3 && it != products.end(); j++ )
                 {
                     if (it->compare(0, i + 1, partial) != 0)
                     {
-                        // Check if partial is prefix.
+                        // Break if 'partial' is not prefix of this product.
                         break;
                     }
                     matches.push_back(*it);
@@ -826,6 +827,12 @@ namespace DesignAndOthers
         unordered_map<string, map<int, string>> m_dataMap;
 
     };
+
+    //-----------------------------------------------------------------------------
+    // 901. Online Stock Span (Medium)
+    // Topic: Design, Monotonic stack
+    // Related to: 739. Daily Temperatures.
+    //-----------------------------------------------------------------------------
 
     //-----------------------------------------------------------------------------
     // Test function

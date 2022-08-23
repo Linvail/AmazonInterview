@@ -40,23 +40,23 @@ namespace DP
 
             // It is important to fill with -1. For example, for AB, dp should be 3 as 3 = 1 + (i - (-1)) - (-1 - -1)
             // => 3 = 1 + (i - (-1)) - (0) => 3 = 1 + 1 + 1.
-            vector<int> firstAppearence(26, -1);
-            vector<int> secondAppearence(26, -1);
+            vector<int> firstOccurrence(26, -1);
+            vector<int> secondOccurrence(26, -1);
 
             int dp = 1;
-            firstAppearence[s[0] - 'A'] = 0;
+            firstOccurrence[s[0] - 'A'] = 0;
             int result = dp;
 
             for (int i = 1; i < len; ++i)
             {
-                const char c = s[i];
-                dp = dp + ( i - firstAppearence[c - 'A'] ) - ( firstAppearence[c - 'A'] - secondAppearence[c - 'A'] );
+                const char& c = s[i];
+                dp = dp + ( i - firstOccurrence[c - 'A'] ) - ( firstOccurrence[c - 'A'] - secondOccurrence[c - 'A'] );
 
                 result += dp;
 
                 // Update the index tables.
-                secondAppearence[c - 'A'] = firstAppearence[c - 'A'];
-                firstAppearence[c - 'A'] = i;
+                secondOccurrence[c - 'A'] = firstOccurrence[c - 'A'];
+                firstOccurrence[c - 'A'] = i;
             }
 
             return result;
@@ -137,7 +137,6 @@ namespace DP
     // Given an array of strings words (without duplicates), return all the
     // concatenated words in the given list of words.
     //
-    //
     // Similar questions: Word Break, Word Break II
     //-----------------------------------------------------------------------------
     class Solution472
@@ -150,45 +149,47 @@ namespace DP
 
             for (const auto& word : words)
             {
-                const int len = static_cast<int>( word.size() );
-
-                // dp[i] : whether string[1~i] is a word in wordSet.
-                // dp[j] = dp[i] && string[i + 1, j - i + 1] is a word in wordSet.
-                vector<bool> dp(len + 1, false);
-                dp[0] = true;
-
-                for (int i = 0; i < len; ++i)
-                {
-                    if (!dp[i])
-                    {
-                        // When i is 0, we already marked the next eligible starting positions,
-                        // we can skip those positions that is not eligible.
-                        // The eligible position j means string[0 ~ j - 1] is word.
-                        // For example, for 'catsdogcats'. word = [cat, cats]
-                        //                      ^^
-                        //                      34  dp[3] and dp[4] is true.
-                        continue;
-                    }
-
-                    for (int j = i + 1; j <= len; j++)
-                    {
-                        string subStr = word.substr(i, j - i);
-                        if (j - i < len && wordSet.count(subStr) > 0)
-                        {
-                            // We block the case 'j - i == len' because the entire word itself is not
-                            // considered as 'concatenated'.
-                            dp[j] = true;
-                        }
-                    }
-                }
-
-                if (dp[len])
+                if (wordBreak(wordSet, word))
                 {
                     result.push_back(word);
                 }
             }
 
             return result;
+        }
+
+        bool wordBreak(unordered_set<string>& wordSet, const string& word)
+        {
+            const size_t len = static_cast<int>( word.size() );
+            //  applepenapple
+            // ^    ^  ^
+            //      j  i
+            // dp[i] : true is word[1~i] can be concatenated.
+            // dp[i] = dp[j] && substr(j, i - j) is word. j < i.
+            vector<bool> dp(len + 1, false);
+            dp[0] = true;
+
+            for (size_t i = 1; i <= len; ++i)
+            {
+                for (int j = static_cast<int>( i - 1 ); j >= 0; --j)
+                {
+                    // Note that the input word is also in the wordSet.
+                    // This is a tricky to avoid comparing word to itself in wordSet.
+                    // A word is considered as concatenated if it can be built from at least two words.
+                    if (i - j == len)
+                    {
+                        break;
+                    }
+
+                    if (dp[j] && wordSet.count(word.substr(j, i - j)) > 0)
+                    {
+                        dp[i] = true;
+                        break;
+                    }
+                }
+            }
+
+            return dp.back();
         }
 
         // Use recursion
@@ -576,7 +577,7 @@ namespace DP
         // Output: ["catsdogcats", "dogcatsdog", "ratcatdogcat"]
         Solution472 sol472;
         vector<string> inputVS = { "cat","cats","catsdogcats","dog","dogcatsdog","hippopotamuses","rat","ratcatdogcat" };
-        auto resultVS = sol472.findAllConcatenatedWordsInADict_recursive(inputVS);
+        auto resultVS = sol472.findAllConcatenatedWordsInADict(inputVS);
         cout << "\n472. Concatenated Words: " << endl;
         LeetCodeUtil::PrintVector(resultVS);
 

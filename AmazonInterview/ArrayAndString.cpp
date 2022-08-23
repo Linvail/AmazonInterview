@@ -239,10 +239,12 @@ namespace ArrayAndString
     }
 
     //-----------------------------------------------------------------------------
-    // 937. Reorder Data in Log Files (Easy)
+    // 937. Reorder Data in Log Files (Medium)
     //-----------------------------------------------------------------------------
     vector<string> reorderLogFiles(vector<string>& logs)
     {
+        // Use a pair to store the letter log.
+        // The 1st is key and the 2nd is the content.
         using LetterLog = pair<string, string>;
         deque<LetterLog> letterLogs;
         vector<string> digitLogs;
@@ -253,7 +255,8 @@ namespace ArrayAndString
             string identifier = str.substr(0, idx);
             string content = str.substr(idx + 1);
 
-            if (content[0] >= '0' && content[0] <= '9')
+            // Examine the content part to determine if it is digit log.
+            if (isdigit(content[0]))
             {
                 digitLogs.push_back(str);
             }
@@ -263,6 +266,7 @@ namespace ArrayAndString
             }
         }
 
+        // Sort the letter logs. Firstly by content, if identical, then by key.
         sort(letterLogs.begin(), letterLogs.end(), [](const LetterLog& left, const LetterLog& right)
             {
                 int res = left.second.compare(right.second);
@@ -277,12 +281,14 @@ namespace ArrayAndString
             });
 
         vector<string> result;
+        // Insert the letter logs first.
         for (const auto& letterLog : letterLogs)
         {
             result.emplace_back(letterLog.first);
             result.back().push_back(' ');
             result.back() += letterLog.second;
         }
+        // Then insert digit logs.
         result.insert(result.end(), digitLogs.begin(), digitLogs.end());
 
         return result;
@@ -318,13 +324,6 @@ namespace ArrayAndString
 
         return result;
     }
-
-    //-----------------------------------------------------------------------------
-    // 901. Online Stock Span (Medium)
-    // Topic: Monotonic stack
-    // Related to: 739. Daily Temperatures.
-    //-----------------------------------------------------------------------------
-
 
     //-----------------------------------------------------------------------------
     // 907. Sum of Subarray Minimums (Medium-Hard)
@@ -471,6 +470,9 @@ namespace ArrayAndString
         for (int i = 0; i <= len; i++)
         {
             // For 'Maximums', we need to use Monotonic decreasing stack.
+            // For each nums[i], find the boundary [left, right], in which nums[i] is the maximum number.
+            // For example. In [7 5 6 4 8], for 6, left is 7 and right is 8. The boundary forms the subarray [5,6,4].
+            //                  &   ^   &
             while (!monoStack.empty() && nums[monoStack.top()] < ( i == len ? INT_MAX : nums[i] ))
             {
                 // [2, 5, 4, 6, 3, 7, 8, 1]
@@ -491,6 +493,9 @@ namespace ArrayAndString
         monoStack = stack<int>();
 
         // Calculate the Sum of Subarray Minimums.
+        // For each nums[i], find the boundary [left, right], in which nums[i] is the minimum number.
+        // For example. In [1 5 3 4 2], for 3, left is 1 and right is 2. The boundary forms the subarray [5,3,4].
+        //                  &   ^   &
         for (int i = 0; i <= len; i++)
         {
             while (!monoStack.empty() && nums[monoStack.top()] > ( i == len ? INT_MIN : nums[i] ))
@@ -565,9 +570,35 @@ namespace ArrayAndString
             // How do we get the "sum of all subarrays including strength[i] in range (left, right)"?
             // Let's list the indexes:
             //  ...left - 1, left, left + 1, left + 2, ... i - 1, i, i + 1, ... right - 1, right, right + 1...
+            //
+            // Let prefix[i] be the prefix sum of first i elements in strength.
+            //
+            // The sum of subarrays including i are :
+            /*
+            the subarrays that start with left + 1 :
+                sum(left + 1, ... i) = prefix[i + 1] - prefix[left + 1]
+                sum(left + 1, ... i + 1) = prefix[i + 2] - prefix[left + 1]
+                ...
+                sum(left + 1, ... right - 1) = prefix[right] - prefix[left + 1]
+
+            the subarrays that start with left + 2 :
+                sum(left + 2, ... i) = prefix[i + 1] - prefix[left + 2]
+                sum(left + 2, ... i + 1) = prefix[i + 2] - prefix[left + 2]
+                ...
+                sum(left + 2, ... right - 1) = prefix[right] - prefix[left + 2]
+                ...
+
+            the subarrays that start with i :
+                sum(i, ... i) = prefix[i + 1] - prefix[i]
+                sum(i, ... i + 1) = prefix[i + 2] - prefix[i]
+                ...
+                sum(i, ... right - 1) = prefix[right] - prefix[i]
+                Then we combine all above terms, we have :
+            */
+            //
             // positive parts:
             // ( prefix[i + 1] + prefix[i + 2] + ... + prefix[right] ) * ( i - left )
-            //    negative parts :
+            // negative parts:
             // ( prefix[left + 1] + prefix[left + 2] + ... + prefix[i] ) * ( right - i )
 
             long long positive = m_sumOfPrefixSum[right + 1] - m_sumOfPrefixSum[indexOfMin + 1];
@@ -1300,7 +1331,7 @@ namespace ArrayAndString
         vector<string> words{ "hit" };
         cout << "\n819. Most Common Word: " << mostCommonWord("Bob hit a ball, the hit BALL flew far after it was hit.", words) << endl;
 
-        // 937. Reorder Data in Log Files (Easy)
+        // 937. Reorder Data in Log Files (Medium)
         // Input: logs = ["dig1 8 1 5 1","let1 art can","dig2 3 6","let2 own kit dig","let3 art zero"]
         // Output: ["let1 art can", "let3 art zero", "let2 own kit dig", "dig1 8 1 5 1", "dig2 3 6"]
         words = { "dig1 8 1 5 1","let1 art can","dig2 3 6","let2 own kit dig","let3 art zero" };

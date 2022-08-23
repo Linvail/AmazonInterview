@@ -20,15 +20,21 @@ namespace TreeAndGraph
     class Solution127
     {
     public:
-
         int ladderLength(string beginWord, string endWord, vector<string>& wordList)
         {
+            // This looks like a graph problem.
+            // We can solve it by BFS.
+            // In a matrix, we can move in 4 directions. In this question, for each character
+            // in a word, we can change in 25 directions.
+            // A move is to change one character to another. A move is eligible when the new
+            // string exists in the wordSet.
+            // Then, we add the new string into queue and remove it from wordSet. It is just like
+            // marking it has been visited and cannot be visited again.
             unordered_set<string> wordSet(wordList.begin(), wordList.end());
 
             // If endWord doesn't exist in wordList, just return 0.
             if (wordSet.find(endWord) == wordSet.end()) return 0;
 
-            unordered_set<string> visited;
             queue<string> paths;
             paths.push(beginWord);
             int level = 1;
@@ -42,7 +48,7 @@ namespace TreeAndGraph
                     string lastWord = paths.front();
                     paths.pop();
                     const size_t len = lastWord.size();
-                    // Iterate every char
+                    // Iterate every char in lastWord.
                     for (int j = 0; j < len; j++)
                     {
                         string tempWord(lastWord);
@@ -53,8 +59,6 @@ namespace TreeAndGraph
                             tempWord[j] = ch;
                             if (wordSet.find(tempWord) != wordSet.end())
                             {
-                                visited.insert(tempWord);
-
                                 if (tempWord == endWord)
                                 {
                                     return level;
@@ -63,21 +67,14 @@ namespace TreeAndGraph
                                 {
                                     paths.push(tempWord);
                                 }
-                            }
 
+                                // If we jump from "hit" to "hot" and put "hot" into the queue.
+                                // We should not ever jump to "hot" again, so we must remove it.
+                                wordSet.erase(tempWord);
+                            }
                         }
                     }
                 }
-
-                // This is tricky. Note that we process the paths with the same length in the for-loop.
-                // Within the for-loop, the words put into 'visited' must be still usable for the other paths
-                // with the same length. Once we finished one loop, those visited words should not be usable anymore.
-                // The path should go back, otherwise we will enter infinite loop.
-                for (const auto& word : visited)
-                {
-                    wordSet.erase(word);
-                }
-                visited.clear();
             }
 
             return 0;

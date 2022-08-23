@@ -11,6 +11,7 @@
 #include <queue>
 #include <numeric>
 #include <stack>
+#include <functional> // For std::hash
 
 namespace SortingAndSearching
 {
@@ -21,12 +22,17 @@ namespace SortingAndSearching
     //-----------------------------------------------------------------------------
     // 973. K Closest Points to Origin
     //-----------------------------------------------------------------------------
-
     class Solution973
     {
     public:
         vector<vector<int>> kClosest(vector<vector<int>>& points, int k)
         {
+            #define HEAP 1
+
+            #if(!HEAP)
+            // Sort in ascending order according the distance to origin.
+            // We don't need the actual distance, we just need their relationship, so we
+            // don't need to calculate the square root.
             sort(points.begin(), points.end(), [](const vector<int>& a, const vector<int>& b)
                 {
                     return a[0] * a[0] + a[1] * a[1] < b[0] * b[0] + b[1] * b[1];
@@ -34,6 +40,35 @@ namespace SortingAndSearching
             );
 
             return vector<vector<int>>(points.begin(), points.begin() + k);
+
+            #else
+
+            // Make a priority_queue to store the square of distance and the point's index.
+            // The queue will be sorted by the square of distance in descending order. The largest one
+            // will be top. So, when anytime its size exceeds k, we can remove the top one.
+
+            priority_queue<pair<size_t, size_t>> maxQueue;
+
+            for (size_t i = 0; i < points.size(); ++i)
+            {
+                size_t dist = points[i][0] * points[i][0] + points[i][1] * points[i][1];
+                maxQueue.emplace(dist, i);
+
+                if (maxQueue.size() > k)
+                {
+                    maxQueue.pop();
+                }
+            }
+
+            vector<vector<int>> result;
+            while (!maxQueue.empty())
+            {
+                result.push_back(points[maxQueue.top().second]);
+                maxQueue.pop();
+            }
+
+            return result;
+            #endif
         }
     };
 
@@ -51,76 +86,76 @@ namespace SortingAndSearching
         vector<string> mostVisitedPattern(vector<string>& username, vector<int>& timestamp, vector<string>& website)
         {
             // < username : < timestamp : website > >
-            map<string, map<int, string>> userData;
+            unordered_map<string, map<int, string>> userData;
             // <pattern, count of occurance of this pattern>
             map<vector<string>, int> patternCountMap;
-            const int len = static_cast<int>(username.size());
-            const int maxPatternLen = 3;
 
             // The user is not guaranteed to be sorted, we need to iterate over the entire vector.
-            for (int i = 0; i < len; ++i)
+            for (size_t i = 0; i < username.size(); ++i)
             {
                 userData[username[i]].insert(make_pair(timestamp[i], website[i]));
             }
 
-            string prevUser = userData.begin()->first;
-            const int userCount = static_cast<int>(userData.size());
-            int maxCountOfPattern = 0;
-            vector<string> mostOccurredPattern;
-
-            // We use '<=' in order to process the last user.
-            for (int i = 0; i <= userData.size(); ++i)
+            for (const auto& user : userData)
             {
-                auto it = userData.begin();
-                std::advance(it, userCount == i ? userCount - 1 : i);
-                const string& currUser = it->first;
-                if (i == userData.size() || prevUser != currUser)
-                {
-                    // For the previous user, build the patterns.
-                    auto& visitHistory = userData[prevUser];
-                    vector<string> pattern;
-                    for (const auto& log : visitHistory)
-                    {
-                        pattern.push_back(log.second);
-                        if (pattern.size() == 3)
-                        {
-                            break;
-                        }
-                    }
-                    patternCountMap[pattern]++;
-
-                    // Keep track the pattern which occurs the most.
-                    if (patternCountMap[pattern] > maxCountOfPattern)
-                    {
-                        maxCountOfPattern = patternCountMap[pattern];
-                        // pattern is now useless, we could use swap to avoid coping.
-                        mostOccurredPattern.swap(pattern);
-                    }
-                    prevUser = currUser;
-                }
+                buildPatterns(user.second, patternCountMap);
             }
 
             // If there is more than one pattern with the same largest score, return the lexicographically smallest such pattern.
-            bool havingTheSameLargestScore =
-                std::count_if(patternCountMap.begin(), patternCountMap.end(), [&](const pair<vector<string>, int>& obj)
-                {
-                    return maxCountOfPattern == obj.second;
-                }) > 1;
-
-            if (havingTheSameLargestScore)
+            // The patternCountMap is sorted by key, which is a vector of patterns.
+            // They are by default sorted in ascending order lexicographically.
+            int maxCountOfPattern = 0;
+            vector<string> mostOccurredPattern;
+            for (const auto& pattern : patternCountMap)
             {
-                auto itt = std::find_if(patternCountMap.begin(),
-                                        patternCountMap.end(),
-                                        [&](const pair<vector<string>, int>& obj)
-                    {
-                        return maxCountOfPattern == obj.second;
-                    });
-
-                mostOccurredPattern = itt->first;
+                if (pattern.second > maxCountOfPattern)
+                {
+                    maxCountOfPattern = pattern.second;
+                    mostOccurredPattern = pattern.first;
+                }
             }
 
             return mostOccurredPattern;
         }
+
+    private:
+
+        // This function is called once per user. The usage count of each pattern should be incremented once
+        // per user.
+        void buildPatterns(const map<int, string>& visitHistory, map<vector<string>, int>& patternCountMap)
+        {
+            unordered_set<vector<string>, VectorStringHash> patterns;
+            for (auto it = visitHistory.begin(); it != visitHistory.end(); ++it)
+            {
+                for (auto it2 = next(it); it2 != visitHistory.end(); ++it2)
+                {
+                    for (auto it3 = next(it2); it3 != visitHistory.end(); ++it3)
+                    {
+                        vector<string> pattern = { it->second, it2->second, it3->second };
+                        patterns.insert(pattern);
+                    }
+                }
+            }
+
+            for (const auto& pattern : patterns)
+            {
+                patternCountMap[pattern]++;
+            }
+        }
+
+        struct VectorStringHash
+        {
+            size_t operator()(const vector<string>& strings) const
+            {
+                size_t output = 0;
+                std::hash<string> str_hash;
+                for (const auto& s : strings)
+                {
+                    output ^= str_hash(s);
+                }
+                return output;
+            }
+        };
     };
 
     //-----------------------------------------------------------------------------
@@ -377,7 +412,7 @@ namespace SortingAndSearching
     vector<int> platesBetweenCandles(string s, vector<vector<int>>& queries)
     {
         const size_t len = s.size();
-        // Note that the elements will be sorted in ascending order.
+        // candleSet stores the index of every candle in ascending order.
         vector<size_t> candleSet;
         for (int i = 0; i < len; ++i)
         {
@@ -403,6 +438,11 @@ namespace SortingAndSearching
                 endCandle -= 1;
             }
 
+            // Note that there may be multiple candles between the section.
+            // For example: | * * | * * * |
+            //              ^             ^
+            //              0     3       7  <- Index in string
+            //              0     1       2  <- Index in candleSet
             if (startCandle < endCandle)
             {
                 // The total elements within the range is candleSet[endCandle] - candleSet[startCandle] + 1.
@@ -414,7 +454,6 @@ namespace SortingAndSearching
             {
                 result.push_back(0);
             }
-
         }
 
         return result;
@@ -877,9 +916,9 @@ namespace SortingAndSearching
             // The max x is n * min(a, b). It is 4 * 10^13.
 
             long long lcm = a * b / getGcd(a, b);
-            long long modulo = 1e9 + 7;
+            long long modulo = static_cast<long long>(1e9 + 7);
             long long left = 2;
-            long long right = 4 * 1e13;
+            long long right = static_cast<long long>(4 * 1e13);
 
             while (left < right)
             {
@@ -896,7 +935,7 @@ namespace SortingAndSearching
                 }
             }
 
-            return right % modulo;
+            return static_cast<int>(right % modulo);
         }
 
     private:
@@ -949,7 +988,7 @@ namespace SortingAndSearching
 
             // The better method is to use binary search (on their difference).
             // It is much harder.
-            const int len = nums.size();
+            const size_t len = nums.size();
             sort(nums.begin(), nums.end());
             // The left boundary must be 0 for the case of two identical number.
             int left = 0;
@@ -964,10 +1003,10 @@ namespace SortingAndSearching
                 // For example, if mid = 3, the difference value could be 0, 1 ,2.
                 // We might have 0, 0, 1, 1, 2. Total 5. How do we get this?
 
-                int startIndex = 0;
-                int count = 0;
+                size_t startIndex = 0;
+                size_t count = 0;
                 // Iterate all numbers.
-                for (int i = 0; i < len; ++i)
+                for (size_t i = 0; i < len; ++i)
                 {
                     // Find the range that can produces difference value < mid.
                     // Find the startIndex as the left boundary.
@@ -993,7 +1032,7 @@ namespace SortingAndSearching
 
             }
 
-            return right;
+            return static_cast<int>(right);
             #endif
         }
     };
@@ -1052,15 +1091,22 @@ namespace SortingAndSearching
         // Output: ["a", "b", "a"]. Not ["a","b","c"] because if there is more than one pattern with the same
         // largest score, return the lexicographically smallest such pattern.
 
+        // Input:
         // ["zkiikgv","zkiikgv","zkiikgv","zkiikgv"]
         // [436363475, 710406388, 386655081, 797150921]
         // ["wnaaxbfhxp", "mryxsjc", "oz", "wlarkzzqht"]
-        // Output: ["oz","mryxsjc","wlarkzzqht"]
+        // Expected Output: ["oz","mryxsjc","wlarkzzqht"]
+
+        // Input:
+        // ["h","eiy","cq","h","cq","txldsscx","cq","txldsscx","h","cq","cq"]
+        // [527896567, 334462937, 517687281, 134127993, 859112386, 159548699, 51100299, 444082139, 926837079, 317455832, 411747930]
+        // ["hibympufi", "hibympufi", "hibympufi", "hibympufi", "hibympufi", "hibympufi", "hibympufi", "hibympufi", "yljmntrclw", "hibympufi", "yljmntrclw"]
+        // Expected output: ["hibympufi","hibympufi","yljmntrclw"]
 
         Solution1152 sol1152;
-        vector<string> inputVVS = { "zkiikgv","zkiikgv","zkiikgv","zkiikgv" };
-        vector<int> inputVI = { 436363475, 710406388, 386655081, 797150921 };
-        vector<string> website = { "wnaaxbfhxp", "mryxsjc", "oz", "wlarkzzqht" };
+        vector<string> inputVVS = { "h","eiy","cq","h","cq","txldsscx","cq","txldsscx","h","cq","cq" };
+        vector<int> inputVI = { 527896567, 334462937, 517687281, 134127993, 859112386, 159548699, 51100299, 444082139, 926837079, 317455832, 411747930 };
+        vector<string> website = { "hibympufi", "hibympufi", "hibympufi", "hibympufi", "hibympufi", "hibympufi", "hibympufi", "hibympufi", "yljmntrclw", "hibympufi", "yljmntrclw" };
         auto resultVS = sol1152.mostVisitedPattern
         (
             inputVVS,
