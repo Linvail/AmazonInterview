@@ -626,8 +626,12 @@ namespace SortingAndSearching
         int highest = INT_MIN;
         for (auto& list : nums)
         {
+            // Get lowest and highest element of the first elements among all lists.
             lowest = min(lowest, list.front());
             highest = max(highest, list.front());
+
+            // The 2nd iterator is always end(). It is just used to test if we
+            // reach the end of the list while we are moving the 1st iterator.
             sortQueue.emplace(list.begin(), list.end());
         }
 
@@ -1043,8 +1047,11 @@ namespace SortingAndSearching
     //-----------------------------------------------------------------------------
     int partitionArray(vector<int>& nums, int k)
     {
+        // Sort the array first.
         sort(nums.begin(), nums.end());
+
         int count = 0;
+        // Start i = 0, find j = i + 1 ~ n - 1, so that nums[j] > nums[i] + k.
         for (int i = 0; i < nums.size(); ++i)
         {
             // Find the first number >= nums[start] + k.
@@ -1060,6 +1067,118 @@ namespace SortingAndSearching
         }
 
         return count;
+    }
+
+    //-----------------------------------------------------------------------------
+    // 1705. Maximum Number of Eaten Apples (Medium)
+    // Topic: Min-heap
+    //-----------------------------------------------------------------------------
+    int eatenApples(vector<int>& apples, vector<int>& days)
+    {
+        // <expiration day, remaining cout of apple>
+        using TAppleRecord = pair<size_t, int>;
+
+        priority_queue<TAppleRecord, vector<TAppleRecord>, greater<TAppleRecord>> appleInventory;
+
+        const size_t arrLen = apples.size();
+        // 0-based index to indicates which day it is.
+        size_t dayIdx = 0;
+        int result = 0;
+
+        while (dayIdx < arrLen || appleInventory.size() > 0)
+        {
+            // Add the apples grow today.
+            if (dayIdx < arrLen)
+            {
+                // Need to put -1 because the apple would rot on the day = dayIdx + days[dayIdx].
+                const size_t expiration = ( dayIdx + days[dayIdx] ) > 1 ? dayIdx + days[dayIdx] - 1 : 0;
+                appleInventory.emplace(expiration, apples[dayIdx]);
+            }
+
+            // Remove the rotted apples.
+            while (!appleInventory.empty() && appleInventory.top().first < dayIdx)
+            {
+                appleInventory.pop();
+            }
+
+            if (!appleInventory.empty() && appleInventory.top().second > 0)
+            {
+                // top() returns const, so we cannot modify it.
+                // We take it out, modify, and push back.
+                auto lastRecord = appleInventory.top();
+                appleInventory.pop();
+
+                // Eat one apple.
+                lastRecord.second--;
+                result++;
+
+                if (lastRecord.second > 0)
+                {
+                    appleInventory.push(lastRecord);
+                }
+            }
+
+            dayIdx++;
+        }
+
+        return result;
+    }
+
+    //-----------------------------------------------------------------------------
+    // 1642. Furthest Building You Can Reach (Medium)
+    // Topic: Min/Max-heap
+    //-----------------------------------------------------------------------------
+    int furthestBuilding(vector<int>& heights, int bricks, int ladders)
+    {
+        priority_queue<int> usedBricks;
+
+        int result = 0;
+        for (size_t i = 1; i < heights.size(); ++i)
+        {
+            int diff = heights[i] - heights[i - 1];
+            if (diff > 0)
+            {
+                // Use bricks
+                if (bricks >= diff)
+                {
+                    bricks -= diff;
+                    usedBricks.emplace(diff);
+                }
+                else if (ladders == 0)
+                {
+                    // No other ways to climb.
+                    break;
+                }
+                else if(usedBricks.empty() || usedBricks.top() < diff)
+                {
+                    // No used brick record or the biggest record is not still enough.
+                    // Use ladder
+                    ladders--;
+                }
+                else
+                {
+                    // Use a ladder to replace one used bricks record.
+                    // Refund the used bricks.
+                    ladders--;
+                    bricks += usedBricks.top();
+                    usedBricks.pop();
+
+                    if (bricks >= diff)
+                    {
+                        bricks -= diff;
+                        usedBricks.emplace(diff);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+
+            result++;
+        }
+
+        return result;
     }
 
     //-----------------------------------------------------------------------------
@@ -1268,5 +1387,20 @@ namespace SortingAndSearching
         // Output: 3
         inputVI = { 2,2,4,5 };
         cout << "\n2294. Partition Array Such That Maximum Difference Is K: " << partitionArray(inputVI, 0) << endl;
+
+        // 1705. Maximum Number of Eaten Apples (Medium)
+        // Input: apples = [1,2,3,5,2], days = [3,2,1,4,2]
+        // Output: 7
+        // [0,19,19,19,11,14,33,0,28,7,0,28,7,0,21,16,0,22,0,13,8,0,19,0,0,2,26,2,22,0,8,0,0,27,19,16,24,0,20,26,20,7,0,0,29,0,0,16,19,0,0,0,29,30,17,0,23,0,0,26,24,13,3,0,21,0,18,0]
+        // [0, 5, 1, 16, 7, 10, 54, 0, 40, 2, 0, 23, 4, 0, 20, 18, 0, 40, 0, 22, 8, 0, 35, 0, 0, 3, 24, 1, 8, 0, 10, 0, 0, 2, 38, 8, 4, 0, 36, 33, 14, 9, 0, 0, 56, 0, 0, 21, 27, 0, 0, 0, 14, 20, 18, 0, 42, 0, 0, 44, 3, 8, 3, 0, 10, 0, 27, 0]
+        inputVI = { 0,19,19,19,11,14,33,0,28,7,0,28,7,0,21,16,0,22,0,13,8,0,19,0,0,2,26,2,22,0,8,0,0,27,19,16,24,0,20,26,20,7,0,0,29,0,0,16,19,0,0,0,29,30,17,0,23,0,0,26,24,13,3,0,21,0,18,0 };
+        vector<int> days = { 0, 5, 1, 16, 7, 10, 54, 0, 40, 2, 0, 23, 4, 0, 20, 18, 0, 40, 0, 22, 8, 0, 35, 0, 0, 3, 24, 1, 8, 0, 10, 0, 0, 2, 38, 8, 4, 0, 36, 33, 14, 9, 0, 0, 56, 0, 0, 21, 27, 0, 0, 0, 14, 20, 18, 0, 42, 0, 0, 44, 3, 8, 3, 0, 10, 0, 27, 0 };
+        cout << "\n1705. Maximum Number of Eaten Apples: " << eatenApples(inputVI, days) << endl;
+
+        // 1642. Furthest Building You Can Reach (Medium)
+        // Input: heights = [4,2,7,6,9,14,12], bricks = 5, ladders = 1
+        // Output: 4
+        inputVI = { 4,2,7,6,9,14,12 };
+        cout << "\n1642. Furthest Building You Can Reach: " << furthestBuilding(inputVI, 5, 1) << endl;
     }
 }

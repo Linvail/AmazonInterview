@@ -550,6 +550,92 @@ namespace DP
 
     };
 
+    //-----------------------------------------------------------------------------
+    // 2110. Number of Smooth Descent Periods of a Stock (Medium)
+    //-----------------------------------------------------------------------------
+    long long getDescentPeriods(vector<int>& prices)
+    {
+        // Define dp[i] : the number of smooth descent periods of the string ends
+        // at i.
+        // dp[0] = 1. For example, the number of smooth descent period of [1] is 1.
+        // dp[i] = dp[i - 1] + 1 if prices[i] ==  prices[i-1] - 1, or 1 if not
+        // The answer is sum(dp[0] ~ dp[N-1]).
+        // We can notice that dp[i] only depends on the previous - dp[i - 1], so
+        // we can use just one variable instead of a array for dp.
+
+        long long result = 1;
+        long long prevCount = 1;
+
+        for (int i = 1; i < prices.size(); ++i)
+        {
+            if (prices[i] == prices[i - 1] - 1)
+            {
+                prevCount += 1;
+            }
+            else
+            {
+                prevCount = 1;
+            }
+            result += prevCount;
+        }
+
+        return result;
+    }
+
+    //-----------------------------------------------------------------------------
+    // 1335. Minimum Difficulty of a Job Schedule (Hard)
+    //-----------------------------------------------------------------------------
+    int minDifficulty(vector<int>& jobDifficulty, int d)
+    {
+        // Find minimum sum of maximums
+        // Typical Dynamic programming question.
+        //
+        // Define n = jobDifficulty.size().
+        // Define dp[i][k] : answer of distribute i jobs for k days. The final
+        // answer is dp[n][d]
+        //
+        //  k - 1 days     k day
+        //  ---------  ------------
+        // [1 2 ... j] [j+1, j+2, i]
+        //
+        // Consider dp[i][k-1]. We need to decide how to distribute jobs - how
+        // to decide j?
+        // And, dp[i][k] = min( dp[j][k-1] + max(jobDifficulty[j+1 ... i]) )
+        //
+        // We need to find the max, so we need to iterate all possible j, so we
+        // need to figure out its boundary.
+        // A day must has one job, so: k - 1 <= j < i
+
+        const size_t n = jobDifficulty.size();
+
+        if (d > n)
+        {
+            return -1;
+        }
+
+        // Initial to INT_MAX / 2 to make sure it won't overflow when we add something
+        // to it.
+        vector<vector<int>> dp(n + 1, vector<int>(d + 1, INT_MAX / 2));
+        dp[0][0] = 0;
+
+        for (int i = 1; i <= static_cast<int>(n); ++i)
+        {
+            for (int k = 1; k <= d; ++k)
+            {
+                int maxJobDifficult = 0;
+                // Scan backwardly.
+                for (int j = i - 1; j >= k - 1; j--)
+                {
+                    // Calculate the maximum between k-1 ~ i-1 within jobDifficulty.
+                    maxJobDifficult = max(maxJobDifficult, jobDifficulty[j]);
+
+                    dp[i][k] = min(dp[i][k], dp[j][k - 1] + maxJobDifficult);
+                }
+            }
+        }
+
+        return dp[n][d];
+    }
 
     //-----------------------------------------------------------------------------
     // Test function
@@ -616,5 +702,17 @@ namespace DP
         Solution2355 sol2355;
         // 48, 100, 51, 10
         cout << "\n2355. Maximum Number of Books You Can Take: " << sol2355.maximumBooks({ 48, 100, 51 }) << endl;
+
+        // 2110. Number of Smooth Descent Periods of a Stock (Medium)
+        // Input: prices = [3,2,1,4]
+        // Output: 7
+        vector<int >inputVI = { 3,2,1,4 };
+        cout << "\n2110. Number of Smooth Descent Periods of a Stock: " << getDescentPeriods(inputVI) << endl;
+
+        // 1335. Minimum Difficulty of a Job Schedule (Hard)
+        // Input: jobDifficulty = [6,5,4,3,2,1], d = 2
+        // Output: 7
+        inputVI = { 6,5,4,3,2,1 };
+        cout << "\n1335. Minimum Difficulty of a Job Schedule: " << minDifficulty(inputVI, 2) << endl;
     }
 }

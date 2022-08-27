@@ -378,7 +378,9 @@ namespace DesignAndOthers
     // 772. Basic Calculator III (Hard)
     //
     // Similar questions:
-    // Build Binary Expression Tree From Infix Expression (Solved in TreeAndGraph.cpp)
+    // 1597. Build Binary Expression Tree From Infix Expression (Solved in TreeAndGraph.cpp)
+    // The following implementation is modified from 1597. It is complex.
+    // @todo This has simpler solution.
     //-----------------------------------------------------------------------------
     class Solution772
     {
@@ -396,10 +398,11 @@ namespace DesignAndOthers
                 {
                     if (!isdigit(s[i]))
                     {
+                        // Add number before adding the operand, like 9568+
+                        // We must check if the number is -1 because a operand may follow a pair of (), like (1+2)+.
+                        // In that case, temp will be -1, and we should not add -1.
                         if (temp != -1)
                         {
-                            // A operand may follow a pair of (xxx). In that case, temp will be
-                            // -1, we must not add it.
                             elements.emplace_back(false, temp);
                         }
                         elements.emplace_back(true, s[i]);
@@ -510,6 +513,8 @@ namespace DesignAndOthers
     // 227. Basic Calculator II (Medium)
     //
     // Unlike "772. Basic Calculator III", there is no parentheses in the string.
+    // The following implementation is modified from "Basic Calculator III".
+    // It is complex. @todo This question has simpler solution.
     //-----------------------------------------------------------------------------
     class Solution227
     {
@@ -835,6 +840,56 @@ namespace DesignAndOthers
     //-----------------------------------------------------------------------------
 
     //-----------------------------------------------------------------------------
+    // 1429. First Unique Number
+    //
+    // Key idea: Need to keep the order of "unique numbers".
+    // For the non-unique numbers, we don't care about their order. We don't even
+    // need to record its count of occurrence. We only need to mark if it is unique.
+    //-----------------------------------------------------------------------------
+    class FirstUnique
+    {
+    public:
+        FirstUnique(vector<int>& nums)
+        {
+            for (const auto& n : nums)
+            {
+                add(n);
+            }
+        }
+
+        int showFirstUnique()
+        {
+            return uniqueNumers.empty() ? -1 : uniqueNumers.front();
+        }
+
+        void add(int value)
+        {
+            auto it = numberToUniqueIt.find(value);
+            if (it == numberToUniqueIt.end())
+            {
+                // value is unique.
+                uniqueNumers.push_back(value);
+                // Build mapping value -> the last iterator.
+                numberToUniqueIt[value] = --uniqueNumers.end();
+            }
+            else if(it->second != uniqueNumers.end())
+            {
+                // value becomes not unique now! Remove it from uniqueNumers.
+                uniqueNumers.erase(it->second);
+                // Mark it invalid.
+                numberToUniqueIt[value] = uniqueNumers.end();
+            }
+            // If value was not unique already, do nothing.
+        }
+
+    private:
+        // Only store the unique numbers.
+        list<int> uniqueNumers;
+        // Number -> it's iterator in uniqueNumers if it is unique.
+        unordered_map<int, list<int>::iterator> numberToUniqueIt;
+    };
+
+    //-----------------------------------------------------------------------------
     // Test function
     //-----------------------------------------------------------------------------
     void TestDesignAndOthers()
@@ -936,5 +991,16 @@ namespace DesignAndOthers
         excel.sum(3, 'C', { "A1", "A1:B2" }); // return 4
         excel.set(2, 'B', 2);
         excel.get(3, 'C'); // return 6
+
+        // 1429. First Unique Number
+        inputVI = { 2, 3 ,5 };
+        FirstUnique firstUnique(inputVI);
+        cout << firstUnique.showFirstUnique() << endl; // return 2
+        firstUnique.add(5);            // the queue is now [2,3,5,5]
+        cout << firstUnique.showFirstUnique() << endl; // return 2
+        firstUnique.add(2);            // the queue is now [2,3,5,5,2]
+        cout << firstUnique.showFirstUnique() << endl; // return 3
+        firstUnique.add(3);            // the queue is now [2,3,5,5,2,3]
+        cout << firstUnique.showFirstUnique() << endl; // return -1
     }
 }

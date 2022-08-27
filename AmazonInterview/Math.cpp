@@ -2,6 +2,7 @@
 #include "LeetCodeUtil.h"
 
 #include <string>
+#include <algorithm>
 
 namespace Math
 {
@@ -180,6 +181,73 @@ namespace Math
     }
 
     //-----------------------------------------------------------------------------
+    // 556. Next Greater Element III (Medium)
+    //-----------------------------------------------------------------------------
+    class Solution556
+    {
+    public:
+        int nextGreaterElement(int n)
+        {
+            string strNum = to_string(n);
+
+            // std::next_permutation() rearranges the elements in the range
+            // [first,last) into the next lexicographically greater permutation
+            // However, the interviewer might not want me to use it.
+            // The interviewer may want to me to implement it.
+            //bool ret = std::next_permutation(strNum.begin(), strNum.end());
+
+            if (!nextGreaterPermutation(strNum))
+            {
+                return -1;
+            }
+
+            long long result = stoll(strNum);
+
+            return result > INT_MAX ? -1 : static_cast<int>(result);
+        }
+
+    private:
+
+        bool nextGreaterPermutation(string& strNum)
+        {
+            if (strNum.empty()) return false;
+
+            size_t i = strNum.size() - 1;
+            // Scan from right to right, find the first i where
+            // stop increasing.
+            // 0 1 2 3 4 5 6 < - index
+            // 1 0 2 3 6 5 4
+            //         ^     Stop at index 4.
+            while (i >= 1 && strNum[i] <= strNum[i - 1])
+            {
+                i--;
+            }
+            if (i == 0)
+            {
+                // Like: 9 8 7 6 5 4. It is monotonic increasing from left to right.
+                return false; // no next permutation, i.e. already largest
+            }
+
+            size_t j = strNum.size() - 1;
+
+            // 0 1 2 3 4 5 6 < - index
+            // 1 0 2 3 6 5 4
+            //         i   j
+            while (strNum[j] <= strNum[i - 1])
+            {
+                j--;
+            }
+            // 1 0 2 3 6 5 4. Swap 4 and 3 => 1 0 2 4 6 5 3
+            swap(strNum[i - 1], strNum[j]);
+
+            // 1 0 2 4 6 5 3. Reverse i ~ n - 1. => 1 0 2 4 3 5 6
+            reverse(strNum.begin() + i, strNum.end());
+
+            return true;
+        }
+    };
+
+    //-----------------------------------------------------------------------------
     // Test function.
     //-----------------------------------------------------------------------------
     void TestMath()
@@ -206,5 +274,9 @@ namespace Math
         // Input: 10
         // Output: 1334961
         cout << "\n634. Find the Derangement of An Array: " << findDerangement(10) << endl;
+
+        // 556. Next Greater Element III (Medium)
+        Solution556 sol556;
+        cout << "\n556. Next Greater Element III: " << sol556.nextGreaterElement(1023654) << endl;
     }
 }

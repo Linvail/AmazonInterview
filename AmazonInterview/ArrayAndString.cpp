@@ -112,6 +112,18 @@ namespace ArrayAndString
         return result;
     }
 
+    #if(SMART)
+    string intToRoman(int num)
+    {
+        string ones[] = { "","I","II","III","IV","V","VI","VII","VIII","IX" };
+        string tens[] = { "","X","XX","XXX","XL","L","LX","LXX","LXXX","XC" };
+        string hrns[] = { "","C","CC","CCC","CD","D","DC","DCC","DCCC","CM" };
+        string ths[] = { "","M","MM","MMM" };
+
+        return ths[num / 1000] + hrns[( num % 1000 ) / 100] + tens[( num % 100 ) / 10] + ones[num % 10];
+    }
+    #endif
+
     //-----------------------------------------------------------------------------
     // 16. 3Sum Closest (Medium)
     //-----------------------------------------------------------------------------
@@ -1301,6 +1313,124 @@ namespace ArrayAndString
     }
 
     //-----------------------------------------------------------------------------
+    // 1864. Minimum Number of Swaps to Make the Binary String Alternating (Medium)
+    //-----------------------------------------------------------------------------
+    class Solution1864
+    {
+    public:
+        int minSwaps(string s)
+        {
+            const size_t len = s.size();
+            // Count how many 1 and 0 we have.
+            vector<int> digitCount(2);
+
+            // Take care of the 1st character.
+            digitCount[s[0] - '0']++;
+            char nextValidChar = s[0] == '0' ? '1' : '0';
+            // If we don't swap the 1st, calculate the mismatched count.
+            int mismatched1 = 0;
+            // If we swap the 1st, calculate the mismatched count.
+            int mismatched2 = 1;
+
+
+            for (int i = 1; i < len; ++i)
+            {
+                if (s[i] != nextValidChar)
+                {
+                    mismatched1++;
+                }
+                else
+                {
+                    mismatched2++;
+                }
+                nextValidChar = nextValidChar == '0' ? '1' : '0';
+
+                digitCount[s[i] - '0']++;
+            }
+
+            int mismatched = 0;
+
+            if (( len & 0b1 ) == 0)
+            {
+                // Even length
+                if (digitCount[0] != digitCount[1])
+                {
+                    // If count of 0 and 1 are not same.
+                    return -1;
+                }
+
+                mismatched = min(mismatched1, mismatched2);
+            }
+            else
+            {
+                // Odd length
+                if (1 != abs(digitCount[0] - digitCount[1]))
+                {
+                    return -1;
+                }
+
+                // If s starts with 0 and there is more 0 than 1, we must choose
+                // mismatched1 because we must not swap the 1st 0 to 1.
+                if (( s[0] == '0' && digitCount[0] > digitCount[1] ) ||
+                    ( s[0] == '1' && digitCount[1] > digitCount[0] ))
+                {
+                    mismatched = mismatched1;
+                }
+                else
+                {
+                    mismatched = mismatched2;
+                }
+
+            }
+
+            return mismatched / 2;
+        }
+    };
+
+    //-----------------------------------------------------------------------------
+    // 2340. Minimum Adjacent Swaps to Make a Valid Array (Medium)
+    //
+    // Topic: Greedy
+    //-----------------------------------------------------------------------------
+    int minimumSwaps(vector<int>& nums)
+    {
+        // This is a advanced practice of two pointers technique.
+        // Find:
+        // idxMin: the index of leftmost smallest element. The distance to 0 is
+        // idxMin.
+        // idxMax: the index of rightmost largest element. The distance to end is
+        // N - idxMax -1, where N is the length of nums array.
+        //
+        // The minimum swaps needed is:
+        // if idxMin < idxMax, idxMin + (N - idxMax - 1)
+        // if idxMin > idxMax, idxMin + (N - idxMax - 1) - 1
+
+        const size_t len = nums.size();
+        // How to find idxMin / idxMax in one pass??
+        size_t idxMin = 0;
+        size_t idxMax = len - 1;
+
+        for (int i = 1; i < len; i++)
+        {
+            // Deal with idxMin.
+            if (nums[idxMin] > nums[i])
+            {
+                // Move right.
+                idxMin = i;
+            }
+
+            // Deal with idxMax.
+            if (nums[idxMax] < nums[len - i - 1])
+            {
+                idxMax = len - i - 1;
+            }
+        }
+
+        // Beware of edge case : [9]. idxMin == idxMax.
+        return ( idxMin <= idxMax ? 0 : -1 ) + static_cast<int>(idxMin + ( len - idxMax - 1 ));
+    }
+
+    //-----------------------------------------------------------------------------
     // Test function
     //-----------------------------------------------------------------------------
     void TestArrayAndString()
@@ -1476,5 +1606,11 @@ namespace ArrayAndString
         // Input: s = "deeedbbcccbdaa", k = 3
         // Output: "aa
         cout << "\n1209. Remove All Adjacent Duplicates in String II: " << removeDuplicates("deeedbbcccbdaa", 3) << endl;
+
+        // 2340. Minimum Adjacent Swaps to Make a Valid Array (Medium)
+        // Input: nums = [3,4,5,5,3,1]
+        // Output: 6
+        inputVI = { 3,4,5,5,3,1 };
+        cout << "\n2340. Minimum Adjacent Swaps to Make a Valid Array: " << minimumSwaps(inputVI) << endl;
     }
 }

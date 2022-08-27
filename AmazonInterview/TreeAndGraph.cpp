@@ -507,7 +507,8 @@ namespace TreeAndGraph
     };
 
     //-----------------------------------------------------------------------------
-    // 863. All Nodes Distance K in Binary Tree
+    // 863. All Nodes Distance K in Binary Tree (Medium)
+    // This is nearly Hard
     //-----------------------------------------------------------------------------
     class Solution863
     {
@@ -518,7 +519,7 @@ namespace TreeAndGraph
             unordered_map<TreeNode*, TreeNode*> link2Parent;
             linkParent(root, link2Parent);
 
-            // From target node, do DFS to until reaching the k level.
+            // From target node, do BFS to until reaching the k level.
             queue<TreeNode*> nodeQueue{ {target} };
             unordered_set<TreeNode*> visited{ target };
 
@@ -981,6 +982,113 @@ namespace TreeAndGraph
         unordered_map<pair<int, int>, MovingRec, IntPairHash> m_table;
     };
 
+    //-----------------------------------------------------------------------------
+    // 979. Distribute Coins in Binary Tree (Medium)
+    //
+    // This is hard. The key is focus on leaf and use recursion to convey the
+    // "need to movement" from down to up.
+    //-----------------------------------------------------------------------------
+    class Solution979
+    {
+    public:
+        int distributeCoins(TreeNode* root)
+        {
+            int movements = 0;
+            helper(root, movements);
+
+            return movements;
+        }
+
+    private:
+        //! Get how much the specified node can give upwardly.
+        //! The negative number means it needs its parent to give it coin.
+        int helper(TreeNode* node, int& movements)
+        {
+            if (!node) return 0;
+
+            int left = helper(node->left, movements);
+            int right = helper(node->right, movements);
+
+            // No matter it is positive or negative, it is regarded as 1 movement.
+            movements += abs(left) + abs(right);
+
+            // Each node should maintain exactly 1 coin.
+            // Exclude left/right, we should return 0 when it just has 1 coin, meaning it
+            // doesn't give or ask any coin.
+            return node->val + left + right - 1;
+        }
+    };
+
+    //-----------------------------------------------------------------------------
+    // 289. Game of Life (Medium)
+    //
+    // Follow up:
+    // Could you solve it in-place? Remember that the board needs to be updated
+    // simultaneously:
+    // You cannot update some cells first and then use their updated values to
+    // update other cells.
+    // In this question, we represent the board using a 2D array.In principle, the
+    // board is infinite, which would cause problems when the active area
+    // encroaches upon the border of the array(i.e., live cells reach the border).
+    // How would you address these problems ?
+    //-----------------------------------------------------------------------------
+    void gameOfLife(vector<vector<int>>& board)
+    {
+        // The key is to define transitional state for each cell to replace the
+        // original 0/1 values.
+        //
+        //  0(00)  dead(next) < -dead(current)
+        //  1(01)  live(next) < -live(current)
+        //  2(10)  dead(next) < -live(current)
+        //  3(11)  live(next) < -dead(current)
+
+        const size_t m = board.size();
+        const size_t n = board[0].size();
+
+        vector<pair<int, int>> dirs = { {1, 0}, {0, 1}, {-1, 0}, {0, -1}, {1, 1}, {-1, -1}, {1, -1}, {-1, 1} };
+
+        for (size_t i = 0; i < m; ++i)
+        {
+            for (size_t j = 0; j < n; ++j)
+            {
+                // Calculate how many live cells nearby.
+                int count = 0;
+                for (size_t k = 0; k < dirs.size(); ++k)
+                {
+                    const int x = static_cast<int>(i) + dirs[k].first;
+                    const int y = static_cast<int>(j) + dirs[k].second;
+                    // Need to understand the question very well.
+                    // The question said: "The next state is created by applying the above rules simultaneously to every cell in the current state"
+                    // So, only 1 or 2 can be considered as live cell.
+                    if (x >= 0 && x < m && y >= 0 && y < n && ( board[x][y] == 1 || board[x][y] == 2 ))
+                    {
+                        ++count;
+                    }
+                }
+
+                // Change the state. "> 0" is a convenient way, we actually want to test == 1 || == 3.
+                if (board[i][j] > 0 && ( count < 2 || count > 3 ))
+                {
+                    // Become dead.
+                    board[i][j] = 2;
+                }
+                else if (board[i][j] == 0 && count == 3)
+                {
+                    // Revive
+                    board[i][j] = 3;
+                }
+            }
+        }
+
+        for (size_t i = 0; i < m; ++i)
+        {
+            for (size_t j = 0; j < n; ++j)
+            {
+                board[i][j] %= 2;
+            }
+        }
+    }
+
 
     //-----------------------------------------------------------------------------
     // Test function.
@@ -1117,5 +1225,20 @@ namespace TreeAndGraph
         // Output: 0.06250
         Solution688 sol688;
         cout << "\n688. Knight Probability in Chessboard: " << sol688.knightProbability(3, 2, 0, 0) << endl;
+
+        // 979. Distribute Coins in Binary Tree (Medium)
+        // Input: root = [0,3,0]
+        // Output: 3
+        Solution979 sol979;
+        root = BuildTreeFromLevelOrderString("[0,3,0]");
+        cout << "\n979. Distribute Coins in Binary Tree: " << sol979.distributeCoins(root) << endl;
+
+        // 289. Game of Life
+        // Input: board = [[0, 1, 0], [0, 0, 1], [1, 1, 1], [0, 0, 0]]
+        // Output : [[0, 0, 0], [1, 0, 1], [0, 1, 1], [0, 1, 0]]
+        LeetCodeUtil::BuildIntMatrixFromString("[[0, 1, 0], [0, 0, 1], [1, 1, 1], [0, 0, 0]]", &inputVVI);
+        gameOfLife(inputVVI);
+        cout << "\n289. Game of Life: " << endl;
+        LeetCodeUtil::PrintMatrix(inputVVI);
     }
 }
